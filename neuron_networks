@@ -1,0 +1,428 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+class Neuron:
+    def __init__(self, args_dict):
+        self.v_membrane = 0
+        self.M = args_dict['M']
+        self.pr = args_dict['pr']
+        self.c = args_dict['c']
+        self.f = args_dict['f']
+        self.k = args_dict['k']
+        self.vth = args_dict['vth']
+        self.tau_d = args_dict['tau_d']  # Decay constant
+        self.E = 0
+        self.t_previous = 0  # previous firing time
+        self.refractory_period = 1e-3
+        self.refractory_period_timer = 0
+        self.b = 0
+        self.delay_timer = 0
+        self.delay_value = 0.5e-3
+
+        self.pre = []
+        self.post = []
+        self.v_history = [0]
+        self.t_history = [0]
+        self.AP_times = []
+
+    def refill_release_vesicles(self, t_current):
+
+        # Refill vesicles
+        t_difference = t_current - self.t_previous
+        refill_probability = 1 - np.exp(-t_difference * self.k)
+        vesicles_refilled = np.random.binomial(self.E, refill_probability)
+        self.E -= vesicles_refilled
+
+        # Release vesicles
+        self.b = np.random.binomial(self.M-self.E, self.pr)  # Number released
+        self.E += self.b
+
+    def update_voltage(self, t_current, neuron):
+        # Update voltage
+        t_difference = t_current - neuron.t_previous
+        reduction = np.exp(-(t_difference)/neuron.tau_d)
+        voltage_addition = self.c*self.b
+        neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
+        neuron.v_history.append(neuron.v_membrane)
+        neuron.t_history.append(t_current)
+        neuron.t_previous = t_current
+
+    def fire_AP(self, t_current):
+        # Check for over threshold action potential firing
+        if self.v_membrane >= self.vth:
+            self.v_membrane = 0
+            self.AP_times.append(t_current)
+
+    def get_data(self):
+        self.inter_AP_times = np.diff(self.AP_times)
+        self.CV2 = np.var(self.inter_AP_times) / \
+            np.mean(self.inter_AP_times)**2
+        self.mean_frequency = 1/np.mean(self.inter_AP_times)
+            
+    def plot_v_history(self):
+        fontsize = 20
+        t_mod, v_mod = get_mod_v_hist([self.t_history, self.v_history,self.AP_times, self.tau_d])
+        plt.plot(t_mod, v_mod, label = 'v_history')
+        plt.plot(t_mod, self.vth*np.ones(len(t_mod)), label = 'vth')
+        plt.plot([], [], ' ', label = 'Mean f = {}'.format(np.around(self.freq_data,3)))
+        plt.legend(loc = 'upper right', fontsize = fontsize - 5)
+        plt.xlabel('Time', fontsize = fontsize)
+        plt.ylabel('Membrane Potential', fontsize = fontsize)
+        plt.xticks(fontsize = fontsize)
+        plt.yticks(fontsize = fontsize)
+        plt.show()
+
+
+def to_dict(**x):
+    return x
+
+
+def get_next_time(AP_rate):
+    return np.random.exponential(1./AP_rate)
+
+
+def get_times(rates, run_time):
+    time_array_list = []
+    for idx, r in enumerate(rates):
+        if r == 0:
+            continue
+        time_array = []
+        t_current = 0
+        while t_current < run_time:
+            next_time = get_next_time(r)
+            added_time = next_time + t_current
+            if added_time < run_time:
+                time_array.append([added_time, idx])
+            t_current += next_time
+        time_array_list.extend(time_array)
+
+    # Sort based on the first element (time) of each sublist
+    time_array_list.sort(key=lambda x: x[0])
+    return np.array(time_array_list)
+
+
+def get_mod_v_hist(x):
+
+    times = x[0]
+    v_history = x[1]
+    AP_history = x[2]
+
+    tau_v = x[3]
+
+    n_samples = 100
+
+    t_mod = []
+    v_mod = []
+
+    for i in range(len(times) - 1):
+
+        t_array = np.linspace(1e-6, times[i+1] - times[i], n_samples)
+
+        if times[i] not in AP_history:
+            decay_array = v_history[i]*np.exp(-t_array/tau_v)
+            t_mod.append(times[i] + t_array[:-1])
+            v_mod.append(decay_array[:-1])
+
+        if times[i] in AP_history:
+            decay_array = np.array(
+                [v_history[i]] + [0 for i in range(n_samples - 2)])
+            t_mod.append(times[i] + t_array[:-1])
+            v_mod.append(decay_array)
+
+    return np.array(t_mod).reshape(-1), np.array(v_mod).reshape(-1)
+
+
+def exc_inh_model(f1, f2, run_time):
+
+    n1_dict = to_dict(M=20, pr=0.3, c=0.02, f=f1, k=20, tau_d=1, vth=0.2)
+    n2_dict = to_dict(M=20, pr=0.3, c= -0.008, f=f2, k=20, tau_d=1, vth=0.2)
+
+    n3_dict = to_dict(tau_d=0.01, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+
+    n1 = Neuron(n1_dict)
+    n2 = Neuron(n2_dict)
+    n3 = Neuron(n3_dict)
+
+    firing_times = get_times([n1.f, n2.f], run_time)
+
+    for t_current, i in firing_times:
+
+        if i == 0:
+            n1.refill_release_vesicles(t_current)
+            n1.update_voltage(t_current, n3)
+            if n3.v_membrane >= n3.vth:
+                n3.fire_AP(t_current)
+        if i == 1:
+            n2.refill_release_vesicles(t_current)
+            n2.update_voltage(t_current, n3)
+            if n3.v_membrane >= n3.vth:
+                n3.fire_AP(t_current)
+    n3.get_data()
+
+    # Mean period is T = mean time between action potentials
+    # Frequency is 1 / T
+    return n3
+
+# =============================================================================
+# def IFL(f, run_time):
+#
+#
+#     n1_dict = to_dict(M = 20, pr = 0.3, c = 0.02, f = f1, k = 20, tau_d = 1, vth = 0.2)
+#     n2_dict = to_dict(M = 20, pr = 0.3, c = -0.008, f = f2, k = 20, tau_d = 1, vth = 0.2)
+#
+#     n3_dict = to_dict(tau_d = 0.01, vth = 0.2, M = 0, pr = 0, c = 0, f = 0, k = 0)
+#
+#     n12 = Neuron(n1_dict)
+#     n13 = Neuron(n1_dict)
+#     n2 = Neuron(n2_dict)
+#     n3 = Neuron(n3_dict)
+#
+#     firing_times = get_times([f], run_time)
+#
+#     for t_current, i in firing_times:
+#
+#         if i == 0:
+#
+#             n13.refill_release_vesicles(t_current)
+#             n12.refill_release_vesicles(t_current)
+#
+#             n13.update_voltage(t_current, n3)
+#             n12.update_voltage(t_current, n2)
+#
+#             if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+#                 and (delay_timer == 0):
+#                     n3.fire_AP(t_current)
+#
+#             if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+#                 and (delay_timer == 0):
+#                     delay_timer = delay_value
+#                     delay_elapse_time = np.array([current_time + delay_timer, 1])
+#                     firing_times = np.vstack([firing_times, delay_elapse_time])
+#                     sorted_indices = np.argsort(firing_times[:, 0])  # Get the indices that would sort the array
+#                     firing_times = firing_times[sorted_indices]  # Sort the array using the indices
+#
+#             if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+#                 and (n2.delay_timer == 0):
+#                     # Fire and set the timer
+#                     n3.fire_AP(t_current)
+#                     delay_timer = delay_value
+#                     delay_elapse_time = np.array([current_time + delay_timer, 1])
+#                     firing_times = np.vstack([firing_times, delay_elapse_time])
+#                     sorted_indices = np.argsort(firing_times[:, 0])  # Get the indices that would sort the array
+#                     firing_times = firing_times[sorted_indices]  # Sort the array using the indices
+#
+#             #
+#
+#             if ((n3.v_membrane < n3.vth) and (n2.v_membrane < n2.vth))\
+#                 and (n2.delay_timer > 0):
+#                     max_diff = np.max(t_current - t_previous)
+#                     if max_diff > 0:
+#                         n2.delay_timer -= max_diff
+#                     if max_diff < 0:
+#                         pass
+#
+#
+#
+#
+#         if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+#             and (n2.delay_timer > 0):
+#                 n3.fire_AP(t_current)
+#
+#         if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+#             and (n2.delay_timer == 0):
+#                 n2.delay_timer = n2.delay_value
+#
+#         if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+#             and (n2.delay_timer == 0):
+#                 n3.fire_AP(t_current)
+#                 n2.delay_timer = n2.delay_value
+#
+#
+#         if i == 1:
+#             n2.refill_release_vesicles(t_current)
+#             n2.update_voltage(t_current, n3)
+#
+#             if n3.v_membrane >= n3.vth:
+#                 n3.fire_AP(t_current)
+#
+#     n3.get_data()
+#
+#     # Mean period is T = mean time between action potentials
+#     # Frequency is 1 / T
+#     return n3
+# =============================================================================
+
+
+def add_exp_time(AP_rate):
+    return np.random.exponential(1./AP_rate)
+
+
+def incoherent_feedforward(f1, end_time):
+
+    n1_dict = to_dict(M=20, pr=0.3, c=0.02, f=f1, k=20, tau_d=1, vth=0.2)
+    n2_dict = to_dict(M=20, pr=0.3, c=-0.008, f=0, k=20, tau_d=1, vth=0.2)
+
+    n3_dict = to_dict(tau_d=0.01, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+
+    n12 = Neuron(n1_dict)
+    n13 = Neuron(n1_dict)
+    n2 = Neuron(n2_dict)
+    n3 = Neuron(n3_dict)
+
+    t_previous = 0
+    t_current = 0
+
+    delay_timer = 0
+    delay_value = 0.5e-3
+
+    while t_current < end_time:
+        #        print(t_current / end_time)
+        t_previous = t_current
+        add_time = add_exp_time(f1)
+        t_current = t_current + add_time
+
+        n12.refill_release_vesicles(t_current)
+        n13.refill_release_vesicles(t_current)
+
+        n13.update_voltage(t_current, n3)
+        n12.update_voltage(t_current, n2)
+
+        #
+
+        if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+                and (n2.delay_timer == 0):
+            n3.fire_AP(t_current)
+
+        if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+                and (n2.delay_timer == 0):
+            n2.delay_timer = n2.delay_value
+
+        if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+                and (n2.delay_timer == 0):
+            n3.fire_AP(t_current)
+            n2.delay_timer = n2.delay_value
+
+        #
+
+        if ((n3.v_membrane < n3.vth) and (n2.v_membrane < n2.vth))\
+                and (n2.delay_timer > 0):
+            max_diff = np.max(t_current - t_previous)
+            if max_diff > 0:
+                n2.delay_timer -= max_diff
+            if max_diff < 0:
+                pass
+
+        if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+                and (n2.delay_timer > 0):
+            n3.fire_AP(t_current)
+
+        if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+                and (n2.delay_timer == 0):
+            n2.delay_timer = n2.delay_value
+
+        if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+                and (n2.delay_timer == 0):
+            n3.fire_AP(t_current)
+            n2.delay_timer = n2.delay_value
+
+
+# =============================================================================
+# incoherent_feedforward(50,50, 1)
+# =============================================================================
+
+# =============================================================================
+# a = get_times([50, 50, 50], 10)
+# =============================================================================
+
+#####################################################################################################
+
+
+run_time = 30
+f1_list = np.arange(10, 200, 5)  # Excitatory
+f2_list = np.arange(10, 200, 5)  # Inhibitatory
+frequency_array_3 = np.zeros((len(f1_list), len(f2_list)))
+for i, f1 in enumerate(f1_list):
+    for j, f2 in enumerate(f2_list):
+        n3 = exc_inh_model(f1, f2, run_time)
+        frequency_array_3[i,j] = n3.mean
+
+
+
+data_point_array = np.zeros((len(f1_list), len(f2_list)))
+for i, f1 in enumerate(f1_list):
+    print(i/len(f1_list))
+    for j, f2 in enumerate(f2_list):
+        data_point_array[i, j] = 1 / \
+            np.mean(exc_inh_model(f1, f2, run_time).inter_AP_times)
+
+fontsize = 20
+plt.title('Mean frequency of firing of third neuron', fontsize=fontsize)
+plt.imshow(data_point_array, cmap='hot', origin = 'lower',
+           extent=[f1_list[0], f1_list[-1], f2_list[0], f2_list[-1]])
+plt.xlabel('Excitatory input frequency', fontsize=fontsize)
+plt.ylabel('Inhibitatory input frequency', fontsize=fontsize)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
+
+cbar = plt.colorbar()
+cbar.ax.tick_params(labelsize=fontsize)
+plt.show()
+
+# =============================================================================
+# run_time = 30
+# f1_list = np.arange(10, 200, 5)  # Excitatory
+# f2_list = np.arange(10, 200, 5)  # Inhibitatory
+# 
+# data_point_array = np.zeros((len(f1_list), len(f2_list)))
+# for i, f1 in enumerate(f1_list):
+#     print(i/len(f1_list))
+#     for j, f2 in enumerate(f2_list):
+#         data_point_array[i, j] = 1 / \
+#             np.mean(exc_inh_model(f1, f2, run_time).inter_AP_times)
+# 
+# fontsize = 20
+# plt.title('Mean frequency of firing of third neuron', fontsize=fontsize)
+# plt.imshow(data_point_array, cmap='hot', origin = 'lower',
+#            extent=[f1_list[0], f1_list[-1], f2_list[0], f2_list[-1]])
+# plt.xlabel('Excitatory input frequency', fontsize=fontsize)
+# plt.ylabel('Inhibitatory input frequency', fontsize=fontsize)
+# plt.xticks(fontsize=fontsize)
+# plt.yticks(fontsize=fontsize)
+# 
+# cbar = plt.colorbar()
+# cbar.ax.tick_params(labelsize=fontsize)
+# plt.show()
+# =============================================================================
+
+
+# =============================================================================
+# t_mod_3, v_mod_3 = get_mod_v_hist([n3.t_history, n3.v_history, n3.AP_times, n3.tau_d])
+#
+# fontsize = 20
+#
+# plt.title('Two presynaptic neurons (1 excitatory, 1 inhibitatory) terminating on a third neuron', fontsize = fontsize)
+# # =============================================================================
+# # plt.plot(n3.t_history, n3.v_history, label = 'N3 membrane voltage history')
+# # =============================================================================
+# plt.plot(t_mod_3, v_mod_3, label = 'N3 membrane voltage history')
+# plt.ylabel('Membrane voltage of third neuron', fontsize = fontsize)
+# plt.xlabel('Time', fontsize = fontsize)
+# plt.xticks(fontsize = fontsize)
+# plt.yticks(fontsize = fontsize)
+# plt.plot(n3.t_history, n3.vth*np.ones(len(n3.t_history)), label = 'N3 vth')
+# plt.plot([], [], ' ', label = 'CV2 of inter-AP times = {}'.format(np.around(n3.CV2,3)))
+# plt.plot([], [], ' ', label = '-------------------------------------------------')
+# plt.plot([], [], ' ', label = 'N1: M = {}, pr = {}, c = {}, f = {}, k = {}'.format(n1.M, n1.pr, n1.c, n1.f, n1.k))
+# plt.plot([], [], ' ', label = 'N2: M = {}, pr = {}, c = {}, f = {}, k = {}'.format(n2.M, n2.pr, n2.c, n2.f, n2.k))
+#
+# plt.legend(loc = 'upper right', fontsize = fontsize - 5, framealpha = 0.6)
+#
+#
+# plt.show()
+# print(len(n3.inter_AP_times))
+# print(n3.CV2)
+# =============================================================================
+
+# https://www.ncbi.nlm.nih.gov/books/NBK10921/
+# 0.5 - 10 m/s for unmylineated, up to 150 m/s for mylineated
