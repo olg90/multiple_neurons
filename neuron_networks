@@ -281,27 +281,44 @@ def incoherent_feedforward(f1, end_time):
 
     
             elif firing_condition == '3O, 2U, D>':
-                n3.fire_AP(t_current)
                 
                 if remaining_time > 0: 
-                    n2.delay_timer -= add_time    
+                    
+                    n2.delay_timer -= add_time
+                    n3.fire_AP(t_current)
                     n12.update_voltage(t_current, n2)
                     
                 if remaining_time <= 0:
-                    
-                    n13.update_voltage(t_previous + add_time, n3)
-                    n12.update_voltage(t_previous + add_time, n2)
-                    
+                                       
                     firing_time = t_previous + n2.delay_timer
                     n2.fire_AP(firing_time)
                     n2.delay_timer = 0
                     n2.refill_release_vesicles(firing_time)
                     n2.update_voltage(firing_time, n3)
-                    
                     n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
     
             elif firing_condition == '3U, 2O, D>':
-                n2.delay_timer = n2.delay_value
+                
+                if remaining_time > 0: 
+                    
+                    n2.delay_timer -= add_time
+                    n2.fire_AP(t_current)
+                    n13.update_voltage(t_current, n3)
+                    
+                if remaining_time <= 0:
+                                       
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
                 
             else: # firing_condition == '3O, 2O, D>'
                 n3.fire_AP(t_current)
