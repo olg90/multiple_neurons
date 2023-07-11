@@ -226,6 +226,7 @@ def incoherent_feedforward(f1, end_time):
         n13.refill_release_vesicles(t_current)
         
         firing_condition = get_firing_condition(n3, n2)
+        print(firing_condition)
         
         if firing_condition[-2:] == 'D0':
             
@@ -321,13 +322,51 @@ def incoherent_feedforward(f1, end_time):
                         n3.fire_AP(t_current)
                 
             else: # firing_condition == '3O, 2O, D>'
-                n3.fire_AP(t_current)
-                n2.delay_timer = n2.delay_value
+            
+                if remaining_time > 0: 
+                    
+                    n2.delay_timer -= add_time
+                    n2.fire_AP(t_current)
+                    n3.fire_AP(t_current)
+                    
+                if remaining_time <= 0:
+                                       
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
+                
             
         #
 
 ###############################################################################
 
+run_time = 30
+f_list = np.arange(10, 200, 5)
+frequency_array_3 = np.zeros(len(f_list))
+for i, f in enumerate(f_list): # y axis
+    print(i/len(f_list))
+    n3 = incoherent_feedforward(f, run_time)
+    frequency_array_3[i] = n3.mean_frequency
+
+fontsize = 20
+plt.title('Mean frequency of firing of third neuron', fontsize=fontsize)
+plt.imshow(frequency_array_3, cmap='hot', origin = 'lower')
+plt.xlabel('Inhibitatory input frequency', fontsize=fontsize)
+plt.ylabel('Excitatory input frequency', fontsize=fontsize)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
+
+cbar = plt.colorbar()
+cbar.ax.tick_params(labelsize=fontsize)
+plt.show()
+
+#%%
 
 run_time = 30
 f1_list = np.arange(10, 200, 5)  # Excitatory
@@ -350,6 +389,9 @@ plt.yticks(fontsize=fontsize)
 cbar = plt.colorbar()
 cbar.ax.tick_params(labelsize=fontsize)
 plt.show()
+
+#%%
+
 
 # =============================================================================
 # run_time = 30
