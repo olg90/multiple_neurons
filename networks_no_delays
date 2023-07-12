@@ -18,7 +18,6 @@ class Neuron:
         self.refractory_period_timer = 0
         self.b = 0
 
-
         self.pre = []
         self.post = []
         self.v_history = [0]
@@ -42,7 +41,7 @@ class Neuron:
         # Update voltage
         t_difference = t_current - neuron.t_previous
         reduction = np.exp(-(t_difference)/neuron.tau_d)
-        print(self.c, self.b)
+        print('t', self.c, self.b)
         voltage_addition = self.c*self.b
         print(voltage_addition)
         neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
@@ -178,8 +177,8 @@ def add_exp_time(AP_rate):
 
 def incoherent_feedforward(f1, end_time):
 
-    n1_dict = to_dict(M=10, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
-    n2_dict = to_dict(M=100, pr=0.3, c=-1000, f=0, k=1, tau_d=1, vth=0.2)
+    n1_dict = to_dict(M=50, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
+    n2_dict = to_dict(M=50, pr=0.3, c= -0.008, f=0, k=1, tau_d=1, vth=0.1)
 
     n3_dict = to_dict(tau_d=1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
 
@@ -208,9 +207,11 @@ def incoherent_feedforward(f1, end_time):
             n3.fire_AP(t_current)
             
         if n3.firing_condition() == False and n2.firing_condition() == True:
+            print('S')
             n2.fire_AP(t_current)
+            n2.refill_release_vesicles(t_current)
             n2.update_voltage(t_current, n3)
-            
+
 # =============================================================================
 #         if n3.firing_condition() == False and n2.firing_condition() == False:
 #             pass
@@ -218,7 +219,9 @@ def incoherent_feedforward(f1, end_time):
         
         if n3.firing_condition() == True and n2.firing_condition() == True:
             n3.fire_AP(t_current)
+            n2.refill_release_vesicles(t_current)
             n2.fire_AP(t_current)
+            print('C')
             
     n3.get_data()
     
@@ -227,30 +230,39 @@ def incoherent_feedforward(f1, end_time):
 
 ###############################################################################
 
-run_time = 60
-f_list = np.arange(1, 100)
-frequency_array_3 = np.zeros(len(f_list))
-for i, f in enumerate(f_list): # y axis
-    print(i/len(f_list))
-    others, n3 = incoherent_feedforward(f, run_time)
-    frequency_array_3[i] = n3.mean_frequency
+run_time = 1
 
-fontsize = 20
-plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
-plt.plot(f_list, frequency_array_3)
-plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
-plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
-plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}, tau_d12 = {}'.format(
-    others[0].M, others[0].pr, others[0].c, others[0].k, others[0].tau_d))
-plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 = {}'.format(
-    others[1].M, others[1].pr, others[1].c, others[1].k, others[1].tau_d))
-plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
-    others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
-plt.xticks(fontsize=fontsize)
-plt.yticks(fontsize=fontsize)
-plt.legend(fontsize = fontsize - 10)
+others, n3 = incoherent_feedforward(50, run_time)
+others[2].get_data()
+n3.plot_v_history()
+others[2].plot_v_history()
 
-plt.show()
+# =============================================================================
+# run_time = 60
+# f_list = np.arange(1, 100)
+# frequency_array_3 = np.zeros(len(f_list))
+# for i, f in enumerate(f_list): # y axis
+#     print(i/len(f_list))
+#     others, n3 = incoherent_feedforward(f, run_time)
+#     frequency_array_3[i] = n3.mean_frequency
+# 
+# fontsize = 20
+# plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
+# plt.plot(f_list, frequency_array_3)
+# plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
+# plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
+# plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}, tau_d12 = {}'.format(
+#     others[0].M, others[0].pr, others[0].c, others[0].k, others[0].tau_d))
+# plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 = {}'.format(
+#     others[1].M, others[1].pr, others[1].c, others[1].k, others[1].tau_d))
+# plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
+#     others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
+# plt.xticks(fontsize=fontsize)
+# plt.yticks(fontsize=fontsize)
+# plt.legend(fontsize = fontsize - 10)
+# 
+# plt.show()
+# =============================================================================
 
 # =============================================================================
 # run_time = 30
