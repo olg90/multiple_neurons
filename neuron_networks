@@ -17,7 +17,8 @@ class Neuron:
         self.refractory_period = 1e-3
         self.refractory_period_timer = 0
         self.b = 0
-
+        self.delay_timer = 0
+        self.delay_value = 0.5e-3
 
         self.pre = []
         self.post = []
@@ -29,6 +30,7 @@ class Neuron:
 
         # Refill vesicles
         t_difference = t_current - self.t_previous
+        print(t_current, self.t_previous)
         refill_probability = 1 - np.exp(-t_difference * self.k)
         vesicles_refilled = np.random.binomial(self.E, refill_probability)
         self.E -= vesicles_refilled
@@ -36,15 +38,12 @@ class Neuron:
         # Release vesicles
         self.b = np.random.binomial(self.M-self.E, self.pr)  # Number released
         self.E += self.b
-        self.t_previous = t_current
 
     def update_voltage(self, t_current, neuron):
         # Update voltage
         t_difference = t_current - neuron.t_previous
         reduction = np.exp(-(t_difference)/neuron.tau_d)
-        print(self.c, self.b)
         voltage_addition = self.c*self.b
-        print(voltage_addition)
         neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
         neuron.v_history.append(neuron.v_membrane)
         neuron.t_history.append(t_current)
@@ -76,9 +75,6 @@ class Neuron:
         plt.xticks(fontsize = fontsize)
         plt.yticks(fontsize = fontsize)
         plt.show()
-        
-    def firing_condition(self):
-        return self.v_membrane >= self.vth
 
 
 def to_dict(**x):
@@ -175,81 +171,202 @@ def exc_inh_model(f1, f2, run_time):
 def add_exp_time(AP_rate):
     return np.random.exponential(1./AP_rate)
 
+def get_firing_condition(n3, n2):
+    
+    if ((n3.v_membrane < n3.vth) and (n2.v_membrane < n2.vth))\
+        and (n2.delay_timer == 0):
+            return '3U, 2U, D0'
+    if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+        and (n2.delay_timer == 0):
+            return '3U, 2O, D0'
+    if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+        and (n2.delay_timer == 0):
+            return '3O, 2U, D0'
+    if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+        and (n2.delay_timer == 0):
+            return '3O, 2O, D0'
+        
+
+    if ((n3.v_membrane < n3.vth) and (n2.v_membrane < n2.vth))\
+        and (n2.delay_timer > 0):
+            return '3U, 2U, D>'
+    if ((n3.v_membrane >= n3.vth) and (n2.v_membrane < n2.vth))\
+        and (n2.delay_timer > 0):
+            return '3O, 2U, D>'
+    if ((n3.v_membrane < n3.vth) and (n2.v_membrane >= n2.vth))\
+        and (n2.delay_timer > 0):
+            return '3U, 2O, D>'
+    if ((n3.v_membrane >= n3.vth) and (n2.v_membrane >= n2.vth))\
+        and (n2.delay_timer > 0):
+            return '3O, 2O, D>'
+
 
 def incoherent_feedforward(f1, end_time):
 
-    n1_dict = to_dict(M=10, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
-    n2_dict = to_dict(M=100, pr=0.3, c=-1000, f=0, k=1, tau_d=1, vth=0.2)
+    n1_dict = to_dict(M=20, pr=0.3, c=0.02, f=f1, k=20, tau_d=1, vth=0)
+    n2_dict = to_dict(M=20, pr=0.3, c=-0.008, f=0, k=20, tau_d=1, vth=0.2)
 
-    n3_dict = to_dict(tau_d=1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+    n3_dict = to_dict(tau_d=0.01, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
 
     n12 = Neuron(n1_dict)
     n13 = Neuron(n1_dict)
     n2 = Neuron(n2_dict)
     n3 = Neuron(n3_dict)
 
+    t_previous = 0
     t_current = 0
 
     while t_current < end_time:
         
         #        print(t_current / end_time)
         
+        t_previous = t_current
         add_time = add_exp_time(f1)
         t_current = t_current + add_time
 
-        n13.refill_release_vesicles(t_current)
         n12.refill_release_vesicles(t_current)
-
-        n13.update_voltage(t_current, n3)        
-        n12.update_voltage(t_current, n2)
-
-       
-        if n3.firing_condition() == True and n2.firing_condition() == False:
-            n3.fire_AP(t_current)
-            
-        if n3.firing_condition() == False and n2.firing_condition() == True:
-            n2.fire_AP(t_current)
-            n2.update_voltage(t_current, n3)
-            
-# =============================================================================
-#         if n3.firing_condition() == False and n2.firing_condition() == False:
-#             pass
-# =============================================================================
+        n13.refill_release_vesicles(t_current)
         
-        if n3.firing_condition() == True and n2.firing_condition() == True:
-            n3.fire_AP(t_current)
-            n2.fire_AP(t_current)
+        firing_condition = get_firing_condition(n3, n2)
+        
+        if firing_condition[-2:] == 'D0':
             
-    n3.get_data()
+            n13.update_voltage(t_current, n3)
+            n12.update_voltage(t_current, n2)
+            
+            if firing_condition == '3U, 2U, D0':
+                pass
     
-    return [n12, n13, n2], n3
+            elif firing_condition == '3U, 2O, D0':
+                n2.refill_release_vesicles(t_current)
+                n2.fire_AP(t_current)
+                n2.delay_timer = n2.delay_value
+                
+            elif firing_condition == '3O, 2U, D0':
+                n3.fire_AP(t_current)
+    
+            else: # firing_condition == '3O, 2O, D0':
+                n3.fire_AP(t_current)
+                n2.refill_release_vesicles(t_current)
+                n2.fire_AP(t_current)
+                n2.delay_timer = n2.delay_value  
+            
+        if firing_condition[-2:] == 'D>':
+            
+# =============================================================================
+#             n13.update_voltage(t_current, n3)
+#             n12.update_voltage(t_current, n2)
+# =============================================================================
 
+            remaining_time = n2.delay_timer - add_time
+
+            if firing_condition == '3U, 2U, D>':
+                        
+                
+                
+                if remaining_time > 0: 
+                    n2.delay_timer -= add_time    
+                    
+                    n13.update_voltage(t_current, n3)
+                    n12.update_voltage(t_current, n2)
+                    
+                if remaining_time <= 0:
+                    
+                    n13.update_voltage(t_previous + add_time, n3)
+                    n12.update_voltage(t_previous + add_time, n2)
+                    
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    
+                    n13.update_voltage(t_current, n3)
+
+    
+            elif firing_condition == '3O, 2U, D>':
+                
+                if remaining_time > 0: 
+                    
+                    n2.delay_timer -= add_time
+                    n3.fire_AP(t_current)
+                    n12.update_voltage(t_current, n2)
+                    
+                if remaining_time <= 0:
+                                       
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
+    
+            elif firing_condition == '3U, 2O, D>':
+                
+                if remaining_time > 0: 
+                    
+                    n2.delay_timer -= add_time
+                    n2.fire_AP(t_current)
+                    n13.update_voltage(t_current, n3)
+                    
+                if remaining_time <= 0:
+                                       
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
+                
+            else: # firing_condition == '3O, 2O, D>'
+            
+                if remaining_time > 0: 
+                    
+                    n2.delay_timer -= add_time
+                    n2.fire_AP(t_current)
+                    n3.fire_AP(t_current)
+                    
+                if remaining_time <= 0:
+                                       
+                    firing_time = t_previous + n2.delay_timer
+                    n2.fire_AP(firing_time)
+                    n2.delay_timer = 0
+                    n2.refill_release_vesicles(firing_time)
+                    n2.update_voltage(firing_time, n3)
+                    n13.update_voltage(t_current, n3)
+                    
+                    if n3.v_membrane > n3.vth:
+                        n3.fire_AP(t_current)
+                
+            
+        #
 
 ###############################################################################
 
-run_time = 60
-f_list = np.arange(1, 100)
+run_time = 30
+f_list = np.arange(10, 200, 5)
 frequency_array_3 = np.zeros(len(f_list))
 for i, f in enumerate(f_list): # y axis
-    print(i/len(f_list))
-    others, n3 = incoherent_feedforward(f, run_time)
+    print(int(i/len(f_list)*100), '%')
+    n3 = incoherent_feedforward(f, run_time)
     frequency_array_3[i] = n3.mean_frequency
 
 fontsize = 20
-plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
-plt.plot(f_list, frequency_array_3)
-plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
-plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
-plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}, tau_d12 = {}'.format(
-    others[0].M, others[0].pr, others[0].c, others[0].k, others[0].tau_d))
-plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 = {}'.format(
-    others[1].M, others[1].pr, others[1].c, others[1].k, others[1].tau_d))
-plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
-    others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
+plt.title('Mean frequency of firing of third neuron', fontsize=fontsize)
+plt.imshow(frequency_array_3, cmap='hot', origin = 'lower')
+plt.xlabel('Inhibitatory input frequency', fontsize=fontsize)
+plt.ylabel('Excitatory input frequency', fontsize=fontsize)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
-plt.legend(fontsize = fontsize - 10)
 
+cbar = plt.colorbar()
+cbar.ax.tick_params(labelsize=fontsize)
 plt.show()
 
 # =============================================================================
