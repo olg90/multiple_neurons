@@ -41,9 +41,7 @@ class Neuron:
         # Update voltage
         t_difference = t_current - neuron.t_previous
         reduction = np.exp(-(t_difference)/neuron.tau_d)
-        print('t', self.c, self.b)
         voltage_addition = self.c*self.b
-        print(voltage_addition)
         neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
         neuron.v_history.append(neuron.v_membrane)
         neuron.t_history.append(t_current)
@@ -108,13 +106,13 @@ def get_times(rates, run_time):
     return np.array(time_array_list)
 
 
-def get_mod_v_hist(x):
+def get_mod_v_hist(neuron):
 
-    times = x[0]
-    v_history = x[1]
-    AP_history = x[2]
+    times = neuron.t_history
+    v_history = neuron.v_history
+    AP_history = neuron.AP_times
 
-    tau_v = x[3]
+    tau_v = neuron.tau_d
 
     n_samples = 100
 
@@ -178,9 +176,9 @@ def add_exp_time(AP_rate):
 def incoherent_feedforward(f1, end_time):
 
     n1_dict = to_dict(M=50, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
-    n2_dict = to_dict(M=50, pr=0.3, c= -0.008, f=0, k=1, tau_d=1, vth=0.1)
+    n2_dict = to_dict(M=50, pr=0.3, c= -0.008, f=0, k=1, tau_d=0.1, vth=0.1)
 
-    n3_dict = to_dict(tau_d=1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+    n3_dict = to_dict(tau_d=0.1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
 
     n12 = Neuron(n1_dict)
     n13 = Neuron(n1_dict)
@@ -199,29 +197,28 @@ def incoherent_feedforward(f1, end_time):
         n13.refill_release_vesicles(t_current)
         n12.refill_release_vesicles(t_current)
 
-        n13.update_voltage(t_current, n3)        
-        n12.update_voltage(t_current, n2)
+# =============================================================================
+#         n13.update_voltage(t_current, n3)        
+#         n12.update_voltage(t_current, n2)
+# =============================================================================
 
-       
         if n3.firing_condition() == True and n2.firing_condition() == False:
             n3.fire_AP(t_current)
+            n13.update_voltage(t_current, n3)        
+            n12.update_voltage(t_current, n2)
             
         if n3.firing_condition() == False and n2.firing_condition() == True:
-            print('S')
-            n2.fire_AP(t_current)
             n2.refill_release_vesicles(t_current)
             n2.update_voltage(t_current, n3)
+            n2.fire_AP(t_current)
 
-# =============================================================================
-#         if n3.firing_condition() == False and n2.firing_condition() == False:
-#             pass
-# =============================================================================
+        if n3.firing_condition() == False and n2.firing_condition() == False:
+            pass
         
         if n3.firing_condition() == True and n2.firing_condition() == True:
-            n3.fire_AP(t_current)
             n2.refill_release_vesicles(t_current)
             n2.fire_AP(t_current)
-            print('C')
+            n3.fire_AP(t_current)
             
     n3.get_data()
     
@@ -233,12 +230,20 @@ def incoherent_feedforward(f1, end_time):
 run_time = 1
 
 others, n3 = incoherent_feedforward(50, run_time)
-others[2].get_data()
-n3.plot_v_history()
-others[2].plot_v_history()
+n2 = others[2]
+n2.get_data()
+t2, v2 = get_mod_v_hist(n2)
+t3, v3 = get_mod_v_hist(n3)
+
+plt.plot(t3, v3, label = 'v3')
+plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
+plt.plot(t2, v2, label = 'v2')
+plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
+plt.legend()
+plt.show()
 
 # =============================================================================
-# run_time = 60
+# run_time = 30
 # f_list = np.arange(1, 100)
 # frequency_array_3 = np.zeros(len(f_list))
 # for i, f in enumerate(f_list): # y axis
@@ -259,7 +264,7 @@ others[2].plot_v_history()
 #     others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
 # plt.xticks(fontsize=fontsize)
 # plt.yticks(fontsize=fontsize)
-# plt.legend(fontsize = fontsize - 10)
+# plt.legend(fontsize = fontsize - 5)
 # 
 # plt.show()
 # =============================================================================
