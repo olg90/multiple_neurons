@@ -173,18 +173,20 @@ def exc_inh_model(f1, f2, run_time):
 def add_exp_time(AP_rate):
     return np.random.exponential(1./AP_rate)
 
-
 def incoherent_feedforward(f1, end_time):
 
     n1_dict = to_dict(M=100, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
-    n2_dict = to_dict(M=50, pr=0.3, c= -0.08, f=0, k=1, tau_d=1, vth=0.2)
+    n2_dict = to_dict(M=100, pr=0.3, c= -0.0008, f=0, k=1, tau_d=1, vth=0.1)
 
-    n3_dict = to_dict(tau_d=0.1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+    n3_dict = to_dict(tau_d=1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
 
     n12 = Neuron(n1_dict)
     n13 = Neuron(n1_dict)
     n2 = Neuron(n2_dict)
     n3 = Neuron(n3_dict)
+    
+    n_pre = Neuron(n1_dict)
+    n_post = Neuron(n3_dict)
 
     t_current = 0
 
@@ -200,13 +202,19 @@ def incoherent_feedforward(f1, end_time):
 
         n13.update_voltage(t_current, n3)        
         n12.update_voltage(t_current, n2)
+        
+        n_pre.refill_release_vesicles(t_current)
+        n_pre.update_voltage(t_current, n_post)
+
+        if n_post.firing_condition() == True:
+            n_post.fire_AP(t_current)
        
         if n3.firing_condition() == True and n2.firing_condition() == False:
             n3.fire_AP(t_current)
             
         if n3.firing_condition() == False and n2.firing_condition() == True:
             n2.refill_release_vesicles(t_current)
-            n3.v_membrane -= n2.c*n2.b
+            n3.v_membrane += n2.c*n2.b
             n3.v_history[-1] = n3.v_membrane
             n2.fire_AP(t_current)
 
@@ -221,103 +229,115 @@ def incoherent_feedforward(f1, end_time):
             n3.fire_AP(t_current)
             
     n3.get_data()
+    n_post.get_data()
     
-    return [n12, n13, n2], n3
-
-def incoherent_feedforward_async(f1, end_time):
-
-    n1_dict = to_dict(M=50, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
-    n2_dict = to_dict(M=50, pr=0.3, c= -0.008, f=0, k=1, tau_d=0.1, vth=0.1)
-
-    n3_dict = to_dict(tau_d=0.1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
-
-    n12 = Neuron(n1_dict)
-    n13 = Neuron(n1_dict)
-    n2 = Neuron(n2_dict)
-    n3 = Neuron(n3_dict)
-
-    t_current = 0
-
-    while t_current < end_time:
-        
-        #        print(t_current / end_time)
-        
-        add_time = add_exp_time(f1)
-        t_current = t_current + add_time
-
-        n13.refill_release_vesicles(t_current)
-        n12.refill_release_vesicles(t_current)
-
-        n13.update_voltage(t_current, n3)        
-        n12.update_voltage(t_current, n2)
-       
-        if n3.firing_condition() == True and n2.firing_condition() == False:
-            n3.fire_AP(t_current)
-            
-        if n3.firing_condition() == False and n2.firing_condition() == True:
-            n2.refill_release_vesicles(t_current)
-            n2.update_voltage(t_current + 1e-9, n3)
-            n2.fire_AP(t_current)
+    return [n12, n13, n2, n_pre, n_post], n3
 
 # =============================================================================
-#         if n3.firing_condition() == False and n2.firing_condition() == False:
-#             pass
+# def incoherent_feedforward_async(f1, end_time):
+# 
+#     n1_dict = to_dict(M=50, pr=0.3, c=0.02, f=f1, k=1, tau_d=1, vth=0)
+#     n2_dict = to_dict(M=50, pr=0.3, c= -0.008, f=0, k=1, tau_d=0.1, vth=0.1)
+# 
+#     n3_dict = to_dict(tau_d=0.1, vth=0.2, M=0, pr=0, c=0, f=0, k=0)
+# 
+#     n12 = Neuron(n1_dict)
+#     n13 = Neuron(n1_dict)
+#     n2 = Neuron(n2_dict)
+#     n3 = Neuron(n3_dict)
+#        
+#     t_current = 0
+# 
+#     while t_current < end_time:
+#         
+#         #        print(t_current / end_time)
+#         
+#         add_time = add_exp_time(f1)
+#         t_current = t_current + add_time
+# 
+#         n13.refill_release_vesicles(t_current)
+#         n12.refill_release_vesicles(t_current)
+# 
+#         n13.update_voltage(t_current, n3)        
+#         n12.update_voltage(t_current, n2)
+#        
+#         if n3.firing_condition() == True and n2.firing_condition() == False:
+#             n3.fire_AP(t_current)
+#             
+#         if n3.firing_condition() == False and n2.firing_condition() == True:
+#             n2.refill_release_vesicles(t_current)
+#             n2.update_voltage(t_current + 1e-9, n3)
+#             n2.fire_AP(t_current)
+# 
+# # =============================================================================
+# #         if n3.firing_condition() == False and n2.firing_condition() == False:
+# #             pass
+# # =============================================================================
+#         
+#         if n3.firing_condition() == True and n2.firing_condition() == True:
+#             n2.refill_release_vesicles(t_current)
+#             n2.fire_AP(t_current)
+#             n3.fire_AP(t_current)
+#             
+#     n3.get_data()
+#     
+#     return [n12, n13, n2], n3
 # =============================================================================
-        
-        if n3.firing_condition() == True and n2.firing_condition() == True:
-            n2.refill_release_vesicles(t_current)
-            n2.fire_AP(t_current)
-            n3.fire_AP(t_current)
-            
-    n3.get_data()
-    
-    return [n12, n13, n2], n3
-
-
+###############################################################################
+#
+#                               Main code
+#
 ###############################################################################
 
-# =============================================================================
-# run_time = 1
-# 
-# others, n3 = incoherent_feedforward_async(50, run_time)
-# n2 = others[2]
-# n2.get_data()
-# t2, v2 = get_mod_v_hist(n2)
-# t3, v3 = get_mod_v_hist(n3)
-# 
-# plt.plot(t3, v3, label = 'v3')
-# plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
-# plt.plot(t2, v2, label = 'v2')
-# plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
-# plt.legend()
-# plt.show()
-# =============================================================================
+run_time = 1
 
-run_time = 60*60
-f_list = np.arange(1, 100)
-frequency_array_3 = np.zeros(len(f_list))
-for i, f in enumerate(f_list): # y axis
-    print(i/len(f_list))
-    others, n3 = incoherent_feedforward(f, run_time)
-    frequency_array_3[i] = n3.mean_frequency
+others, n3 = incoherent_feedforward(50, run_time)
+n2 = others[2]
+n2.get_data()
+t2, v2 = get_mod_v_hist(n2)
+t3, v3 = get_mod_v_hist(n3)
 
-fontsize = 20
-plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
-plt.plot(f_list, frequency_array_3)
-plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
-plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
-plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}, tau_d12 = {}'.format(
-    others[0].M, others[0].pr, others[0].c, others[0].k, others[0].tau_d))
-plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 = {}'.format(
-    others[1].M, others[1].pr, others[1].c, others[1].k, others[1].tau_d))
-plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
-    others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
-plt.xticks(fontsize=fontsize)
-plt.yticks(fontsize=fontsize)
-plt.legend(fontsize = fontsize - 5)
-
+plt.plot(t3, v3, label = 'v3')
+plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
+plt.plot(t2, v2, label = 'v2')
+plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
+plt.legend()
 plt.show()
 
+# =============================================================================
+# run_time = 60
+# f_list = np.arange(1, 100)
+# frequency_array_3 = np.zeros(len(f_list))
+# frequency_array_post = np.zeros(len(f_list))
+# for i, f in enumerate(f_list): # y axis
+#     print(i/len(f_list))
+#     others, n3 = incoherent_feedforward(f, run_time)
+#     n_post = others[4]
+#     
+#     frequency_array_3[i] = n3.mean_frequency
+#     frequency_array_post[i] = n_post.mean_frequency
+#     
+# 
+# fontsize = 20
+# plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
+# plt.plot(f_list, frequency_array_3, label = 'IFL')
+# plt.plot(f_list, frequency_array_post, label = 'Normal')
+# plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
+# plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
+# plt.plot([], [], ' ', label = '-----------------------')
+# plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}, tau_d12 = {}'.format(
+#     others[0].M, others[0].pr, others[0].c, others[0].k, others[0].tau_d))
+# plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 = {}'.format(
+#     others[1].M, others[1].pr, others[1].c, others[1].k, others[1].tau_d))
+# plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
+#     others[2].M, others[2].pr, others[2].c, others[2].k, others[2].tau_d))
+# plt.xticks(fontsize=fontsize)
+# plt.yticks(fontsize=fontsize)
+# plt.legend(fontsize = fontsize - 5)
+# 
+# plt.show()
+# 
+# =============================================================================
 # =============================================================================
 # run_time = 30
 # f1_list = np.arange(10, 200, 5)  # Excitatory
