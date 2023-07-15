@@ -14,16 +14,12 @@ class Neuron:
         self.vth = args_dict['vth']
         self.tau_d = args_dict['tau_d']  # Decay constant
         
-        self.refractory_period = 1e-3
-        
         self.E = 0
-        self.refractory_period_timer = 0
         self.b = 0
         self.refill_probability = 0
         self.t_difference = 0
         self.t_previous_received_AP = 0  # previous firing time
         self.t_previous_fired_AP = 0
-        self.n_type = 0
 
         self.pre = []
         self.post = []
@@ -36,10 +32,9 @@ class Neuron:
     def refill_release_vesicles(self, t_current):
 
         # Refill vesicles
-        self.t_difference = t_current - self.t_previous_fired_AP
-
-        self.refill_probability = 1 - np.exp(-self.t_difference * self.k)
-        vesicles_refilled = np.random.binomial(self.E, self.refill_probability)
+        t_difference = t_current - self.t_previous_fired_AP
+        refill_probability = 1 - np.exp(-t_difference * self.k)
+        vesicles_refilled = np.random.binomial(self.E, refill_probability)
         self.E -= vesicles_refilled
 
         # Release vesicles
@@ -183,7 +178,6 @@ def exc_inh_model(f1, f2, run_time):
     # Frequency is 1 / T
     return n3
 
-
 def add_exp_time(AP_rate):
     return np.random.exponential(1./AP_rate)
 
@@ -320,7 +314,7 @@ params_dict = to_dict(M1 = 100, M2 = 100,
                       c1 = 0.02, c2 = -0.1,
                       k1 = 1, k2 = 1,
                       tau_d2 = 1, tau_d3 = 1,
-                      vth2 = 0.2, vth3 = 0.2)
+                      vth2 = 0.1, vth3 = 0.2)
 
 n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
 n2.get_data()
@@ -353,7 +347,7 @@ for i, f in enumerate(f_list): # y axis
     
 fontsize = 20
 plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
-plt.plot(f_list, frequency_array_3, label = 'IFL')
+plt.plot(f_list, frequency_array_3, label = 'IFF')
 plt.plot(f_list, frequency_array_post, label = 'Normal')
 plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
 plt.ylabel('Output neuron frequency (Hz)', fontsize=fontsize)
