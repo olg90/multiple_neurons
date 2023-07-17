@@ -1,0 +1,538 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+import multiprocessing
+
+def add_exp_time(AP_rate = 50):
+    return np.random.exponential( 1./AP_rate)
+
+def get_inter_AP_times(params):
+    
+    end_time = params['end_time']
+    delay_time = params['delay_time']
+    vth = params['vth']
+    delay_percentage = params['delay_percentage']
+    fb_type = params['fb_type']
+
+    end_time = end_time
+    delay_time = delay_time
+    vth = vth
+    
+    M_u = 100 # 70
+    
+    M_d = 200 #200
+    if fb_type == 'FB':
+        M_d = params['M_val']
+
+    E_u = 5
+    E_d = 5
+
+    p_u = 0.2 # 0.3
+    p_d = 0.3 # 0.8
+    if fb_type == 'FB':
+        p_d = params['p_val']
+
+    c_u = 0.02 # 0.02
+    c_d = 0.02 # 0.003
+
+    k_u = np.inf # 20 
+    k_d = np.inf # 125
+    if fb_type == 'FB':
+        k_d = params['k_d_val']
+    
+    tau_v = np.inf #0.001
+    
+    refractory_period_value = 0.001
+    
+    delay_timer = 'None'
+    refractory_period_timer = 'None'
+    delta_t = 1e-9    
+
+    previous_time = 0
+    current_time = 0   
+    membrane_voltage = 0
+    time_of_previous_vesicle_release_d = 0
+    time_of_current_vesicle_release_d = 0 
+    b_u = 0
+    b_d = 0
+    number_of_burst_events = 0
+    
+    v_history = []
+    times_list = []
+    AP_history = []
+    number_of_bursts_until_AP = []
+
+    # Main program
+    while current_time < end_time:
+#        print(current_time / end_time)
+        add_time = add_exp_time()
+        next_AP_time = current_time + add_time
+              
+        # Is there a delay timer currently running?
+        if delay_timer != 'None':
+            #Will it end before the next action potential arrives?
+            if delay_timer <= add_time:
+                time_of_delay = current_time + delay_timer
+                membrane_voltage = -c_d*b_d
+                v_history.append(membrane_voltage)
+                times_list.append(time_of_delay)
+                delay_timer = 'None'
+            # Will it end at some time after the next action potential arrives?
+            else:
+                delay_timer = delay_timer - add_time
+        current_time = next_AP_time
+
+        # Refill vesicles
+        t_difference = current_time - previous_time
+        refill_ratio = 1 - np.exp(-t_difference*k_u)
+        vesicles_refilled = np.random.binomial(E_u, refill_ratio)
+        E_u -= vesicles_refilled
+    
+        # Release vesicles
+        b_u = np.random.binomial(M_u-E_u, p_u) # Number released
+        E_u += b_u
+    
+        # Update the voltage 
+        reduction = np.exp(-(t_difference)/tau_v)
+        # Check to see if action potential occurres during refractory period
+        if refractory_period_timer != 'None':
+            if add_time <= refractory_period_timer:
+                voltage_addition = 0
+                refractory_period_timer = refractory_period_timer - add_time
+                if refractory_period_timer == 0:
+                    refractory_period_timer = 'None'
+            if add_time > refractory_period_timer:
+                refractory_period_timer = 'None'
+                voltage_addition = c_u*b_u
+        else:
+            voltage_addition = c_u*b_u   
+        membrane_voltage = membrane_voltage*reduction + voltage_addition 
+        v_history.append(membrane_voltage)
+        times_list.append(current_time)
+        previous_time = current_time
+
+        # Update the number of burst events
+        number_of_burst_events += 1
+
+        # Action potential 
+        if membrane_voltage >= vth:
+
+            # Update timers
+            if refractory_period_timer == 'None':
+                refractory_period_timer = refractory_period_value - delta_t              
+            if delay_timer != 'None':
+                delay_timer = delay_timer - delta_t                
+            if delay_timer == 'None':
+                delay_timer = np.random.uniform((1-delay_percentage)*delay_time, 
+                                                (1+delay_percentage)*delay_time)
+              
+            # Get burst numbers
+            number_of_bursts_until_AP.append(number_of_burst_events)
+            number_of_burst_events = 0               
+            
+            # Refill vesicles
+            time_of_current_vesicle_release_d = current_time
+            t_diff_vesc = time_of_current_vesicle_release_d - time_of_previous_vesicle_release_d
+            refill_ratio = 1 - np.exp(-t_diff_vesc*k_d) 
+# =============================================================================
+#             refill_ratio = 1
+# =============================================================================
+            vesicles_refilled = np.random.binomial(E_d, refill_ratio)
+            E_d -= vesicles_refilled
+            
+            #Release vesicles
+            b_d = np.random.binomial(M_d-E_d, p_d)
+            
+            E_d += b_d
+            time_of_previous_vesicle_release_d = current_time
+            if delay_timer == 0:
+                membrane_voltage = -c_d*b_d
+                delay_timer = 'None'
+            if (delay_timer != 0) and (delay_timer != 'None'):
+                membrane_voltage = 0
+            v_history.append(membrane_voltage)
+            times_list.append(current_time + delta_t)
+            AP_history.append(current_time)
+            previous_time = current_time
+
+            # Update time
+            current_time = current_time + delta_t
+            
+    inter_AP_times = np.diff(AP_history)          
+    
+    return_dict = {'inter':inter_AP_times, 't':times_list, 'v':v_history, 'vth': vth,
+                   'b_nums':number_of_bursts_until_AP, 'AP_history':AP_history}
+
+    return return_dict
+
+def test_plot(end_time, delay_time2, vth, args, nfb, d0):
+
+    d2 = get_inter_AP_times(end_time, delay_time2, 0.2, args)
+    fig, ax = plt.subplots(3,1)
+    ax[0].plot(nfb['t'], nfb['v'], label = 'No Feedback')
+    ax[0].plot(nfb['t'], nfb['vth']*np.ones(len(nfb['t'])))
+    ax[0].legend()
+    ax[1].plot(d0['t'], d0['v'], label = 'Delay = 0')
+    ax[1].plot(d0['t'], d0['vth']*np.ones(len(d0['t'])))
+    ax[1].legend()
+    ax[1].set_ylabel('Membrane voltage')
+    ax[2].plot(d2['t'], d2['v'], label = 'Delay = {}'.format(delay_time2))
+    ax[2].plot(d2['t'], d2['vth']*np.ones(len(d2['t'])))
+    ax[2].legend()
+    ax[2].set_xlabel('Time')
+    
+    plt.show()
+
+def to_dict(**x):
+    return x
+
+def histograms_no_noise(end_time, delay_time_0, delay_no_feedback, delay_percentage, 
+                        nfb, d0):
+    
+    #test_plot(end_time, delay_time2 = 0.1, vth = 0.2)
+     
+    percentages = [0, 0.5, 1]
+    
+    inters = []
+    ts = []
+    vs = []
+    vths = []
+    b_lists = []
+
+    mean_delay_0 = np.mean(d0['inter'])
+    
+    if len(d0['inter']) == 0:
+        print('NO AP\'s IN DOWNSTREAM NEURON')
+    
+    for i in range(len(percentages)):
+        
+        params_d = to_dict(end_time = end_time, delay_time = percentages[i]*mean_delay_0, 
+                           vth = 0.2, delay_percentage = delay_percentage)
+        
+        d = get_inter_AP_times(params_d)
+        inters.append(d['inter'])
+        ts.append(d['t'])
+        vs.append(d['v'])
+        vths.append(d['vth'])
+        b_lists.append(d['b_nums'])
+
+    n_bins = 300
+
+    bins_array = np.linspace(0, 3, n_bins)
+    density_type = True
+    
+    font_size = 60
+    
+    fig, ax = plt.subplots(3,1)
+    ax[0].hist(nfb['inter'] / np.mean(nfb['inter']), color ='tab:blue', 
+               bins = bins_array, density = density_type, alpha = 1, 
+               label = 'No feedback\n$CV_T$={}'.format(np.around(
+                   np.std(nfb['inter'])/np.mean(nfb['inter']),3))
+               )
+    ax[1].hist(d0['inter'] / np.mean(d0['inter']), color = 'tab:orange', 
+               density = density_type, 
+               alpha = 0.7, 
+               bins = bins_array, 
+               label = 'Feedback with\nno delay\n$CV_T$ = {}'.format(
+                  np.around(np.std(d0['inter'])/np.mean(d0['inter']),3))
+               )
+    ax[2].hist(inters[1] / np.mean(inters[1]), color = 'green', bins = bins_array,
+               density = density_type, 
+               label = 'Feedback with \nstochastic delay\n$CV_T={}$'.format(\
+                np.around(np.std(inters[i])/np.mean(inters[1]),3))
+               )
+    
+    ax[0].set_xticks([])
+    ax[1].set_xticks([])
+    
+    ax[0].tick_params(axis = 'y', labelsize = font_size)
+    ax[1].tick_params(axis = 'y', labelsize = font_size)
+    ax[2].tick_params(axis = 'y', labelsize = font_size)
+    ax[2].tick_params(axis = 'x', labelsize = font_size)
+    ax[2].legend(fontsize = font_size, handlelength = 0)
+    ax[0].legend(fontsize = font_size, handlelength = 0)
+    ax[1].legend(fontsize = font_size, handlelength = 0)
+        
+    ax[2].set_xlabel('Normalized postynaptic AP firing time', size = font_size)
+    ax[1].set_ylabel('Probability', size = font_size)
+        
+    plt.show()
+    
+def histograms_noise(end_time, delay_time_0, delay_no_feedback, 
+                     delay_mean_percentage, delay_percentage_list, nfb, d0):
+    
+    #test_plot(end_time, delay_time2 = 0.1, vth = 0.2)
+     
+    inters = []
+    ts = []
+    vs = []
+    vths = []
+    b_lists = []
+    
+    mean_delay_0 = np.mean(d0['inter'])
+    
+    for i in range(len(delay_percentage_list)):
+        params_d = to_dict(end_time = end_time, delay_time = delay_mean_percentage*mean_delay_0, 
+                           vth = 0.2, delay_percentage = delay_percentage_list[i])
+        
+        d = get_inter_AP_times(params_d)
+        inters.append(d['inter'])
+        ts.append(d['t'])
+        vs.append(d['v'])
+        vths.append(d['vth'])
+        b_lists.append(d['b_nums'])
+        
+    n_bins = 100
+    
+    bins_array = np.linspace(0, 3, n_bins)
+    density_type = True
+    
+    font_size = 60
+    
+    fig, ax = plt.subplots(len(delay_percentage_list)+2,1)
+    
+    ax[0].hist(nfb['inter'] / np.mean(nfb['inter']), color ='tab:blue', 
+               bins = bins_array, density = density_type, alpha = 1, 
+               label = 'No feedback\n$CV_T$={}'.format(np.around(
+                   np.std(nfb['inter'])/np.mean(nfb['inter']),3)))
+    ax[0].legend(loc = 'upper right', fontsize = font_size)
+    ax[0].tick_params(axis = 'y', labelsize = font_size)
+    ax[0].tick_params(axis = 'x', labelsize = font_size)
+
+    for i in range(len(delay_percentage_list)):
+
+        ax[i+1].hist(inters[i] / np.mean(inters[i]), color = 'green', bins = bins_array,
+                   density = density_type, 
+                   label = 'Noise = +-{}%\n$CV_T={}$'.format(\
+                    100*np.around(delay_percentage_list[i],3),
+                    np.around(np.std(inters[i])/np.mean(inters[i]),3)))
+        ax[i+1].tick_params(axis = 'y', labelsize = font_size)
+        ax[i+1].tick_params(axis = 'x', labelsize = font_size)
+        ax[i+1].legend(fontsize = font_size, loc = 'upper right')
+        
+    ax[len(delay_percentage_list)+1].hist(d0['inter'] / np.mean(d0['inter']), color = 'tab:orange', 
+               density = density_type, 
+               alpha = 0.7, 
+               bins = bins_array, 
+               label = 'Feedback with no delay\n$CV_T$ = {}'.format(
+                  np.around(np.std(d0['inter'])/np.mean(d0['inter']),3)))
+    ax[len(delay_percentage_list)+1].legend(fontsize = font_size, loc = 'upper right')
+    ax[len(delay_percentage_list) + 1].set_xlabel('Normalized postynaptic\nAP firing time', size = font_size)
+    ax[3].set_ylabel('Probability', size = font_size)
+    ax[len(delay_percentage_list)+1].tick_params(axis = 'x', labelsize = font_size)
+    ax[len(delay_percentage_list)+1].tick_params(axis = 'y', labelsize = font_size)
+    ax[len(delay_percentage_list)+1].tick_params(axis = 'x', labelsize = font_size)
+
+    plt.show()
+    
+def f(v_threshold_value, k_d_val, p_val, M_val, mean_nfb, end_time, delay_time_0, vth, delay_percentage):  
+    
+    params_d0 = to_dict(end_time = end_time, delay_time = delay_time_0, vth = vth,
+                     delay_percentage = delay_percentage, M_val = M_val, 
+                     p_val = p_val, k_d_val = k_d_val, fb_type = 'FB')
+    
+    d0 = get_inter_AP_times(params_d0)
+    mean_d0 = np.mean(d0['inter'])
+    return np.abs(mean_nfb - mean_d0)
+
+def plot_CVs(CVs, equal_type):
+    
+    n_attenuating = 5
+    n_amplifying = 5
+    delta_x_L = 0.05
+    delta_x_R = 0.01
+    
+    max_val = np.max([np.max(cvp) for cvp in CVs])
+    min_val = np.min([np.min(cvp) for cvp in CVs])
+    
+    attenuating_colors = [(1-1/(i+1), 1- 1/(i+1), 1) for i in range(n_attenuating+1)]
+    amplifying_colors = [(1, 1-(i+1)/(n_amplifying+1), 1-(i+1)/(n_amplifying+1)) \
+                         for i in range(n_amplifying+1)]
+    
+    attenuating_levels = list(np.linspace(min_val, 1-delta_x_L, n_attenuating+1))
+    amplifying_levels = list(np.linspace(1+delta_x_R, max_val, n_amplifying+1))
+    
+    white_color = ['white']
+    
+    colors_list_full = attenuating_colors + white_color + amplifying_colors
+    levels_list_full = attenuating_levels + amplifying_levels
+    from matplotlib import colors
+    cmap = colors.ListedColormap(colors_list_full)
+    
+    font_size = 20
+    
+    if len(CVs) > 1:
+        fig, ax = plt.subplots(1,len(CVs), figsize = (6.4, 4.8))
+    
+        norm = colors.BoundaryNorm(levels_list_full, cmap.N)
+        
+        for i in range(len(CVs)):
+            im = ax[i].contourf(CVs[i], levels=levels_list_full, cmap=cmap, extend = 'both', 
+                                norm = norm, 
+                             extent = [M_list[0], M_list[-1],
+                                       p_list[0], p_list[-1],
+                                       ])
+            
+            ax[i].set_title('$k_d = {}$ $sec^{{-1}}$'.format(k_d_list[i]), size = font_size)
+            ax[i].tick_params(labelsize = font_size)
+            
+            if i != 0:
+                ax[i].set_yticks([])
+            if i == 0:
+                ax[i].set_ylabel('Vesicle release probability', size = font_size)
+            if i == 1:
+                ax[i].set_xlabel('                              Number of docking sites', size = font_size)
+                
+            if i == len(CVs)-1:
+                cbar = fig.colorbar(im)
+                #cbar.ax.set_yticklabels([0, 1, 2]) 
+# =============================================================================
+#                 labels_list = [str(np.around(x,2)) for x in levels_list_full]
+# =============================================================================
+                #cbar.ax.set_yticklabels(labels_list)
+                cbar.ax.set_yticklabels([])
+                cbar.set_label('Attenuating (1) Amplifying', size = font_size)
+                cbar.ax.tick_params(size=0)       
+    
+    else:
+        
+        fig, ax = plt.subplots(1)
+        fig.suptitle(equal_type)
+    
+        norm = colors.BoundaryNorm(levels_list_full, cmap.N)
+        
+        im = ax.contourf(CVs[0], levels=levels_list_full, cmap=cmap, extend = 'both', 
+                            norm = norm, 
+                         extent = [M_list[0], M_list[-1],
+                                   p_list[0], p_list[-1],
+                                   ])
+        
+        ax.set_title('$k_d = {}$ $sec^{{-1}}$'.format(k_d_list[0]), size = font_size)
+        ax.tick_params(labelsize = font_size)
+    
+        ax.set_ylabel('Vesicle release probability', size = font_size)
+        ax.set_xlabel('            Number of docking sites', size = font_size)
+    
+        cbar = fig.colorbar(im)
+        #cbar.ax.set_yticklabels([0, 1, 2]) 
+# =============================================================================
+#         labels_list = [str(np.around(x,2)) for x in levels_list_full]
+# =============================================================================
+        #cbar.ax.set_yticklabels(labels_list)
+        cbar.ax.set_yticklabels([])
+        cbar.set_label('Attenuating (1) Amplifying', size = font_size)
+        cbar.ax.tick_params(size=0)
+        
+    plt.subplots_adjust(top=0.88,
+                    bottom=0.2,
+                    left=0.07,
+                    right=0.985,
+                    hspace=0.13,
+                    wspace=0.14)
+    plt.show()
+
+import itertools
+
+def combine_arrays(*arrays):
+    combinations = itertools.product(*arrays)
+    tuples = [tuple(comb) for comb in combinations]
+    return tuples
+
+def parallel_function(inputs):
+    variable, constants = inputs[0], inputs[1]
+    
+    M_val = variable
+    
+    p_val = constants[0]
+    end_time = constants[1]
+    delay_no_feedback = constants[2]
+    vth = constants[3]
+    delay_percentage = constants[4]
+    k_d_val = constants[5]
+    equal_type = constants[6]
+    delay_time_0 = constants[7]
+    vth_fb = constants[8]
+    v_threshold_value_init = constants[9]
+    
+    params_nfb = to_dict(end_time = end_time, delay_time = delay_no_feedback, vth = vth,
+                     delay_percentage = delay_percentage, M_val = M_val, 
+                     p_val = p_val, k_d_val = k_d_val, fb_type = 'NFB')
+    
+    nfb = get_inter_AP_times(params_nfb)
+
+    if equal_type == 'unequal':
+
+        params_d0 = to_dict(end_time = end_time, delay_time = delay_time_0, vth = vth_fb,
+                         delay_percentage = delay_percentage, M_val = M_val, 
+                         p_val = p_val, k_d_val = k_d_val, fb_type = 'FB')
+        d0 = get_inter_AP_times(params_d0)
+
+    if equal_type == 'equal':
+        
+        mean_nfb = np.mean(nfb['inter'])
+        v_threshold_value = v_threshold_value_init
+        #
+
+        v_guess_init = np.random.uniform(0, 0.2)
+        res = minimize(f, v_guess_init, args = (k_d_val, p_val, M_val, mean_nfb, end_time, delay_time_0, 
+                                                     vth, delay_percentage), 
+                       method = 'Nelder-Mead',
+                       tol = 1e-6,
+                       options = {'maxiter':1000, 'fatol':1e-6, 'xatol':1e-6})
+
+
+        v_threshold_value = res.x[0]
+
+        params_d0 = to_dict(end_time = end_time, delay_time = delay_time_0, 
+                            vth = v_threshold_value, delay_percentage = delay_percentage, 
+                            M_val = M_val, p_val = p_val, k_d_val = k_d_val, fb_type = 'FB')
+        nfb = get_inter_AP_times(params_nfb)
+        d0 = get_inter_AP_times(params_d0)            
+
+    cvnfb = np.std(nfb['inter'])/np.mean(nfb['inter'])
+    cvfb = np.std(d0['inter'])/np.mean(d0['inter'])
+
+    ret = cvfb/cvnfb
+    return ret
+
+#################################################################################################
+#
+#                                 Main code
+#
+#################################################################################################
+
+if __name__ == '__main__':
+    pool = multiprocessing.Pool()
+
+    end_time = 3
+    delay_time_0 = 0
+    delay_no_feedback = 1e6
+    delay_percentage = 0
+    vth = 0.2
+    vth_fb = 0.2
+    v_threshold_value_init = 0
+
+    equal_type = 'unequal'
+
+    M_list = np.arange(10, 501, 5)
+    p_list = np.linspace(0, 1, 40)
+    k_d_list = [1, 5, 20, 1000]
+
+    CVs = []
+
+    for q, k_d_val in enumerate(k_d_list):
+        print(q/len(k_d_list))
+
+        CV_k = []
+        for i, p_val in enumerate(p_list):
+            print(i/len(p_list))
+            # Use the Parallel and delayed functions to parallelize the loop
+
+            variable_inputs = M_list  # example of p variable inputs
+            constant_inputs = (p_val, end_time, delay_no_feedback, vth, delay_percentage, k_d_val, 
+                               equal_type, delay_time_0, vth_fb, v_threshold_value_init)
+            results = pool.map(parallel_function, [(x, constant_inputs) for x in variable_inputs])
+
+            CV_k.append(results)
+        CVs.append(CV_k)
+    plot_CVs(CVs, equal_type)
