@@ -51,11 +51,10 @@ class Neuron:
         neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
         neuron.v_history.append(neuron.v_membrane)
         neuron.t_history.append(t_current)
-        self.t_previous_received_AP = t_current
+        neuron.t_previous_received_AP = t_current
          
         # THERE'S TWO t_previous_received_AP UPDATES.  NEED TO FIX.  They 0 out the tdiff on 2.
         
-
     def fire_AP(self, t_current):
         # Check for over threshold action potential firing
         if self.v_membrane >= self.vth:
@@ -242,7 +241,7 @@ def incoherent_feedforward(f1, params_dict, end_time):
             n2.refill_release_vesicles(t_current)
             n2.fire_AP(t_current)
             n3.fire_AP(t_current)
-            
+
     n3.get_data()
     n_post.get_data()
     
@@ -307,33 +306,42 @@ def incoherent_feedforward(f1, params_dict, end_time):
 #
 ###############################################################################
 
-run_time = 1
+# =============================================================================
+# run_time = 2
+# 
+# params_dict = to_dict(M1 = 100, M2 = 20,
+#                       pr1 = 0.2, pr2 = 0.2,
+#                       c1 = 0.02, c2 = -0.05,
+#                       k1 = 1, k2 = 1,
+#                       tau_d2 = 0.1, tau_d3 = 0.1,
+#                       vth2 = 0.2, vth3 = 0.2)
+# 
+# n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
+# n2.get_data()
+# t2, v2 = get_mod_v_hist(n2)
+# t3, v3 = get_mod_v_hist(n3)
+# t_post, v_post = get_mod_v_hist(n_post)
+# 
+# plt.plot(t3, v3, label = 'v3')
+# plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
+# plt.plot(t3, 0*np.ones(len(t3)), color = 'k')
+# plt.plot(t2, v2, label = 'v2')
+# plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
+# # =============================================================================
+# # plt.plot(t_post, v_post, label = 'n_post')
+# # =============================================================================
+# plt.legend()
+# plt.show()
+# =============================================================================
 
-params_dict = to_dict(M1 = 100, M2 = 100,
+run_time = 60*60
+
+params_dict = to_dict(M1 = 100, M2 = 20,
                       pr1 = 0.2, pr2 = 0.2,
-                      c1 = 0.02, c2 = -0.1,
+                      c1 = 0.02, c2 = -0.05,
                       k1 = 1, k2 = 1,
-                      tau_d2 = 1, tau_d3 = 1,
-                      vth2 = 0.1, vth3 = 0.2)
-
-n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
-n2.get_data()
-t2, v2 = get_mod_v_hist(n2)
-t3, v3 = get_mod_v_hist(n3)
-t_post, v_post = get_mod_v_hist(n_post)
-
-plt.plot(t3, v3, label = 'v3')
-plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
-plt.plot(t2, v2, label = 'v2')
-plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
-# =============================================================================
-# plt.plot(t_post, v_post, label = 'n_post')
-# =============================================================================
-plt.legend()
-plt.show()
-
-#%%
-run_time = 60
+                      tau_d2 = 0.1, tau_d3 = 0.1,
+                      vth2 = 0.2, vth3 = 0.2)
 
 f_list = np.arange(1, 100)
 frequency_array_3 = np.zeros(len(f_list))
@@ -341,10 +349,9 @@ frequency_array_post = np.zeros(len(f_list))
 for i, f in enumerate(f_list): # y axis
     print(i/len(f_list))
     n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(f, params_dict, run_time)
-    
     frequency_array_3[i] = n3.mean_frequency
     frequency_array_post[i] = n_post.mean_frequency
-    
+
 fontsize = 20
 plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
 plt.plot(f_list, frequency_array_3, label = 'IFF')
