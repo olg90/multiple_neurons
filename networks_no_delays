@@ -90,10 +90,8 @@ class Neuron:
 def to_dict(**x):
     return x
 
-
 def get_next_time(AP_rate):
     return np.random.exponential(1./AP_rate)
-
 
 def get_times(rates, run_time):
     time_array_list = []
@@ -336,11 +334,11 @@ def incoherent_feedforward(f1, params_dict, end_time):
 
 run_time = 60*60
 
-params_dict = to_dict(M1 = 100, M2 = 20,
-                      pr1 = 0.2, pr2 = 0.2,
-                      c1 = 0.02, c2 = -0.05,
+params_dict = to_dict(M1 = 100, M2 = 100,
+                      pr1 = 0.3, pr2 = 0.3,
+                      c1 = 0.02, c2 = -0.02,
                       k1 = 1, k2 = 1,
-                      tau_d2 = 0.1, tau_d3 = 0.1,
+                      tau_d2 = 1, tau_d3 = 1,
                       vth2 = 0.2, vth3 = 0.2)
 
 f_list = np.arange(1, 100)
@@ -365,9 +363,10 @@ plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}, tau_d12 
     n13.M, n13.pr, n13.c, n13.k, n13.tau_d))
 plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_d23 = {}'.format(
     n2.M, n2.pr, n2.c, n2.k, n2.tau_d))
+plt.plot([], [], ' ', label = 'tau_d3 = {}'.format(n3.tau_d))
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
-plt.legend(fontsize = fontsize - 5)
+plt.legend(fontsize = fontsize - 5, frameon = True, edgecolor = 'black')
 
 plt.show()
 #%%
@@ -452,3 +451,23 @@ plt.show()
 
 # https://www.ncbi.nlm.nih.gov/books/NBK10921/
 # 0.5 - 10 m/s for unmylineated, up to 150 m/s for mylineated
+def v(t, lam, tau, b, n, n0, v0):
+    numerator = (np.exp(-t * (lam + tau)) * (-b * n * (np.exp(lam * t) *\
+                lam - np.exp(t * tau) * tau + np.exp(t * (lam + tau)) * (-lam + tau))\
+                + lam * tau * (-np.exp(t * tau) * n0 + np.exp(lam * t) * \
+                (n0 + lam * v0 - tau * v0))))
+    denominator = lam * (lam - tau) * tau
+    return numerator / denominator
+
+def n_c(t, lam, n, n0):
+    return (np.exp(-lam * t) * (n * (-1 + np.exp(lam * t)) + lam * n0)) / lam
+
+
+lam = 1
+tau = 1
+b = 1
+n = 1
+n0 = 1
+v0 = 1
+
+
