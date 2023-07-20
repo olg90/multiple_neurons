@@ -341,13 +341,13 @@ def incoherent_feedforward(f1, params_dict, end_time):
 # plt.show()
 # 
 # =============================================================================
-run_time = 60
+run_time = 60*60
 
 params_dict = to_dict(M1 = 100, M2 = 100,
                       pr1 = 0.3, pr2 = 0.3,
                       c1 = 0.02, c2 = -0.175,
                       k1 = 2, k2 = 0.5,
-                      tau_v2 = 0.1, tau_v3 = 0.1,
+                      tau_v2 = 0.2, tau_v3 = 0.1,
                       vth2 = 0.2, vth3 = 0.2,
                       run_time = run_time)
 
