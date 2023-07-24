@@ -5,6 +5,7 @@ class Neuron:
     def __init__(self, args_dict):
         
         self.v_membrane = 0
+        self.n_c = 0
         self.M = args_dict['M']
         self.pr = args_dict['pr']
         self.c = args_dict['c']
@@ -13,6 +14,9 @@ class Neuron:
         self.vth = args_dict['vth']
         self.tau_v = args_dict['tau_v']  # Membrane voltage decay constant
         self.run_time = args_dict['run_time']
+        self.n_r = args_dict['n_r'] # neurotransmitters released per vesicle
+        self.lam = args_dict['lam'] # neurotransmitter decay rate
+        self.n_type = args_dict['n_type']
         
         self.E = 0
         self.b = 0
@@ -51,8 +55,6 @@ class Neuron:
         neuron.v_history.append(neuron.v_membrane)
         neuron.t_history.append(t_current)
         neuron.t_previous_received_AP = t_current
-         
-        # THERE'S TWO t_previous_received_AP UPDATES.  NEED TO FIX.  They 0 out the tdiff on 2.
         
     def fire_AP(self, t_current):
         # Check for over threshold action potential firing
@@ -114,7 +116,6 @@ def get_times(rates, run_time):
     # Sort based on the first element (time) of each sublist
     time_array_list.sort(key=lambda x: x[0])
     return np.array(time_array_list)
-
 
 def get_mod_v_hist(neuron):
 
@@ -184,17 +185,22 @@ def add_exp_time(AP_rate):
 def incoherent_feedforward(f1, params_dict, end_time):
     
     n1_dict = to_dict(M=params_dict['M1'], pr=params_dict['pr1'], c=params_dict['c1'], 
-                      f=f1, k=params_dict['k1'], tau_v=0, vth=0, 
+                      f=f1, k=params_dict['k1'], tau_v=0, vth=0, mu = 0, n_r = 0,  lam = 0,
+                      n_type = params_dict['n_type1'],
                       run_time = params_dict['run_time'])
 
     n2_dict = to_dict(M=params_dict['M2'], pr=params_dict['pr2'], c=params_dict['c2'], 
                       f = 0, k=params_dict['k2'], tau_v=params_dict['tau_v2'], 
-                      vth=params_dict['vth2'], 
-                      run_time = params_dict['run_time'])
-    n3_dict = to_dict(tau_v=params_dict['tau_v3'], vth=params_dict['vth3'], 
-                      M=0, pr=0, c=0, f=0, k=0,
+                      vth=params_dict['vth2'], n_r  = params_dict['nr2'],
+                      mu = params_dict['mu2'], lam = params_dict['lam2'],
+                      n_type = params_dict['n_type2'],
                       run_time = params_dict['run_time'])
     
+    n3_dict = to_dict(tau_v=params_dict['tau_v3'], vth=params_dict['vth3'], 
+                      M=0, pr=0, c=0, f=0, k=0, mu = 0, n_r = 0, lam = 0, 
+                      n_type = params_dict['n_type3'],
+                      run_time = params_dict['run_time'])
+
     n12 = Neuron(n1_dict)
     n13 = Neuron(n1_dict)
     n2 = Neuron(n2_dict)
@@ -349,6 +355,8 @@ params_dict = to_dict(M1 = 100, M2 = 100,
                       k1 = 2, k2 = 0.5,
                       tau_v2 = 0.2, tau_v3 = 0.1,
                       vth2 = 0.2, vth3 = 0.2,
+                      nr2 = 1, mu2 = 1, lam2 = 1,
+                      n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
                       run_time = run_time)
 
 f_list = np.arange(1, 100)
