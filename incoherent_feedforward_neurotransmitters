@@ -59,26 +59,47 @@ class Neuron:
             neuron.t_history.append(t_current)
             neuron.t_previous_received_AP = t_current
             
+# =============================================================================
+#         if self.n_type == 'nt':
+#             
+#             t_difference = t_current - neuron.t_previous_received_AP
+#             reduction = np.exp(-(t_difference)/neuron.tau_v)
+#             voltage_addition = self.c*self.b
+#             neuron.v_membrane = neuron.v_membrane*reduction + voltage_addition
+#             neuron.v_history.append(neuron.v_membrane)
+#             neuron.t_history.append(t_current)
+#             neuron.t_previous_received_AP = t_current            
+# =============================================================================
+            
         if self.n_type == 'nt':
             t_difference = t_current - neuron.t_previous_received_AP
-            reduction = np.exp(-(t_difference)/neuron.tau_v)
             voltage_addition = self.c*self.b
-            neuron.v_membrane = get_v_nt(t_difference, lam = self.lam, b = self.b,
-                                         n0 = self.n_c) + voltage_addition
+
+            
+            neuron.v_membrane = get_v_nt(t_difference, b = self.b, v_0 = neuron.v_membrane,
+                                         n_0 = self.n_c, lam = self.lam, tau_v = neuron.tau_v,
+                                         mu = self.mu, n_r = self.n_r) \
+                                         + voltage_addition
+            self.n_c = get_n_c(t_difference, n_0 = self.n_c, b = self.b, 
+                               lam = self.lam, n_r = self.n_r) \
+                                + new_b*self.n_r
+
+    # FIX HERE NEED SOMETHING FOR NEW B.
+    
+    
             neuron.v_history.append(neuron.v_membrane)
             neuron.t_history.append(t_current)
             neuron.t_previous_received_AP = t_current
 
-def get_v_nt(t, lam, tau_v, b, n, n0, v0):
-    numerator = (np.exp(-t * (lam + tau_v)) * (-b * n * (np.exp(lam * t) *\
-                lam - np.exp(t * tau_v) * tau_v + np.exp(t * (lam + tau_v)) * (-lam + tau_v))\
-                + lam * tau_v * (-np.exp(t * tau_v) * n0 + np.exp(lam * t) * \
-                (n0 + lam * v0 - tau_v * v0))))
-    denominator = lam * (lam - tau_v) * tau_v
-    return numerator / denominator
+def get_v_nt(t, b, v_0, n_0, lam, tau_v, mu, n_r):
+    
+    A = 1/(lam*(-1+lam*tau_v))*np.exp(-t*(lam + 1/tau_v))
+    B = lam*(-np.exp(t/tau_v)*n_0*mu*tau_v + np.exp(lam*t)*(-v_0 + lam*v_0*tau_v + n_0*mu*t))
+    C = b*mu*tau_v*(np.exp(t/tau_v)-np.exp(lam*t)*lam*tau_v + np.exp(t*(lam+1/tau_v))*(-1+lam*tau_v))*n_r
+    return A*(B+C)
 
-def n_c(t, lam, n, n0):
-    return (np.exp(-lam * t) * (n * (-1 + np.exp(lam * t)) + lam * n0)) / lam            
+def get_n_c(t, n_0, b, lam, n_r):
+    return np.exp(-lam*t)*(lam*n_0 + b*(-1+np.exp(lam*t))*n_r)/lam
 
 
     def fire_AP(self, t_current):
@@ -89,7 +110,7 @@ def n_c(t, lam, n, n0):
 
     def get_data(self):
         self.AP_times_steady_state = np.array([t for t in self.AP_times if t > 0.2*self.run_time])
-        
+
         if len(self.AP_times_steady_state) > 1:
             self.inter_AP_times = np.diff(self.AP_times)
             self.cv2 = np.var(self.inter_AP_times)/np.mean(self.inter_AP_times)**2
@@ -282,18 +303,15 @@ def incoherent_feedforward(f1, params_dict, end_time):
 
     return n12, n13, n2, n_pre, n_post, n3
 
+def get_v_nt(t, b, v_0, n_0, lam, tau_v, mu, n_r):
+    
+    A = 1/(lam*(-1+lam*tau_v))*np.exp(-t*(lam + 1/tau_v))
+    B = lam*(-np.exp(t/tau_v)*n_0*mu*tau_v + np.exp(lam*t)*(-v_0 + lam*v_0*tau_v + n_0*mu*t))
+    C = b*mu*tau_v*(np.exp(t/tau_v)-np.exp(lam*t)*lam*tau_v + np.exp(t*(lam+1/tau_v))*(-1+lam*tau_v))*n_r
+    return A*(B+C)
 
-def get_v_nt(t, lam, tau_v, b, n, n0, v0):
-    numerator = (np.exp(-t * (lam + tau_v)) * (-b * n * (np.exp(lam * t) *\
-                lam - np.exp(t * tau_v) * tau_v + np.exp(t * (lam + tau_v)) * (-lam + tau_v))\
-                + lam * tau_v * (-np.exp(t * tau_v) * n0 + np.exp(lam * t) * \
-                (n0 + lam * v0 - tau_v * v0))))
-    denominator = lam * (lam - tau_v) * tau_v
-    return numerator / denominator
-
-def n_c(t, lam, n, n0):
-    return (np.exp(-lam * t) * (n * (-1 + np.exp(lam * t)) + lam * n0)) / lam
-
+def get_n_c(t, n_0, b, lam, n_r):
+    return np.exp(-lam*t)*(lam*n_0 + b*(-1+np.exp(lam*t))*n_r)/lam
 
 ###############################################################################
 #
