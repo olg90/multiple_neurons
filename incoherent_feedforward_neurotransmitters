@@ -20,6 +20,7 @@ class Neuron:
         
         self.E = 0
         self.b = 0
+        self.b_previous = 0
         self.refill_probability = 0
         self.t_difference = 0
         self.t_previous_received_AP = 0  # previous firing time
@@ -32,10 +33,12 @@ class Neuron:
         self.b_history = [0]
         self.v_history = [0]
         self.t_history = [0]
+        self.n_c_history = [0]
 
     def refill_release_vesicles(self, t_current):
         
         # Refill vesicles
+        self.b_previous = self.b
         t_difference = t_current - self.t_previous_fired_AP
         refill_probability = 1 - np.exp(-t_difference * self.k)
         vesicles_refilled = np.random.binomial(self.E, refill_probability)
@@ -80,14 +83,15 @@ class Neuron:
                                          n_0 = self.n_c, lam = self.lam, tau_v = neuron.tau_v,
                                          mu = self.mu, n_r = self.n_r) \
                                          + voltage_addition
-            self.n_c = get_n_c(t_difference, n_0 = self.n_c, b = self.b, 
+            self.n_c = get_n_c(t_difference, n_0 = self.n_c, b = self.b_previous, 
                                lam = self.lam, n_r = self.n_r) \
-                                + new_b*self.n_r
+                                + self.b*self.n_r
 
-    # FIX HERE NEED SOMETHING FOR NEW B.
+    # FIX HERE NEED SOMETHING FOR NEW B.  Need b_previous and b_next
     
     
             neuron.v_history.append(neuron.v_membrane)
+            neuron.n_c_history.append(self.n_c)
             neuron.t_history.append(t_current)
             neuron.t_previous_received_AP = t_current
 
