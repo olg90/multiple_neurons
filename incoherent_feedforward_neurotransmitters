@@ -11,12 +11,15 @@ class Neuron:
         self.c = args_dict['c']
         self.f = args_dict['f']
         self.k = args_dict['k']
+        self.mu = args_dict['mu']
         self.vth = args_dict['vth']
         self.tau_v = args_dict['tau_v']  # Membrane voltage decay constant
         self.run_time = args_dict['run_time']
         self.n_r = args_dict['n_r'] # neurotransmitters released per vesicle
         self.lam = args_dict['lam'] # neurotransmitter decay rate
         self.n_type = args_dict['n_type']
+        self.delay_timer = 'none'
+        self.delay_timer_value = 1e-6
         
         self.E = 0
         self.b = 0
@@ -258,11 +261,21 @@ def incoherent_feedforward(f1, params_dict, end_time):
     t_current = 0
 
     while t_current < end_time:
-
         #        print(t_current / end_time)
-
         add_time = add_exp_time(f1)
+
+        if n2.delay_timer != 'none':
+            t_diff = n2.delay_timer - add_time
+            if t_diff > 0:
+                n2.delay_timer -= add_time
+            if t_diff <= 0:
+                t_current_delayed = t_current + n2.delay_timer
+                n2.refill_release_vesicles(t_current_delayed)
+                n2.update_voltage(t_current_delayed, n3)
+                n2.delay_timer = 'none'
+                
         t_current = t_current + add_time
+        
 
         n13.refill_release_vesicles(t_current)
         n12.refill_release_vesicles(t_current)
@@ -279,7 +292,13 @@ def incoherent_feedforward(f1, params_dict, end_time):
         if n3.firing_condition() == True and n2.firing_condition() == False:
             n3.fire_AP(t_current)
             
-        if n3.firing_condition() == False and n2.firing_condition() == True:
+        if (n3.firing_condition() == False and n2.firing_condition() == True) and (n2.delay_timer == 'none'):
+            n2.delay_timer = n2.delay_timer_value
+            
+            
+
+            
+            
             n2.refill_release_vesicles(t_current)
 # =============================================================================
 #             print(n2.b, n2.b*n2.c, t_current)
@@ -348,7 +367,7 @@ params_dict = to_dict(M1 = 100, M2 = 100,
                       k1 = 2, k2 = 0.5,
                       tau_v2 = 0.2, tau_v3 = 0.1,
                       vth2 = 0.2, vth3 = 0.2,
-                      nr2 = 1, mu2 = 1, lam2 = 1,
+                      nr2 = 10, mu2 = 20, lam2 = 1,
                       n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
                       run_time = run_time)
 
@@ -384,17 +403,18 @@ plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}'.format(
     n12.M, n12.pr, n12.c, n12.k))
 plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}'.format(
     n13.M, n13.pr, n13.c, n13.k))
-plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, tau_v2 = {}'.format(
-    n2.M, n2.pr, n2.c, n2.k, n2.tau_v))
-plt.plot([], [], ' ', label = 'tau_v3 = {}'.format(n3.tau_v))
+plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, \ntau_v2 = {}, tau_v3 = {}'.format(
+    n2.M, n2.pr, n2.c, n2.k, n2.tau_v, n3.tau_v))
 plt.plot(f_list, 0*np.ones(len(f_list)), color = 'black')
+plt.plot([], [], ' ', label = '-----------------------')
+plt.plot([], [], ' ', label = '$v\'=mu*n_c-v/tau$\tmu = {}\n$n\'_c=n_r*b-lam*n_c$\t n_r = {}, lam = {}'.format(n2.mu,n2.n_r,n2.lam))
 
 plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
 plt.ylabel('AP firing frequency (Hz)', fontsize=fontsize)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 plt.legend(fontsize = fontsize - 5, frameon = True, 
-           edgecolor = 'black', framealpha = 0)
+           edgecolor = 'black', framealpha = 1, loc = 'lower right')
 plt.show()
 
 plt.figure()
@@ -407,7 +427,7 @@ plt.ylabel('CV2', fontsize=fontsize)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 plt.legend(fontsize = fontsize - 5, frameon = True, 
-           edgecolor = 'black', framealpha = 0)
+           edgecolor = 'black', framealpha = 1, loc = 'upper right')
 
 plt.show()
 
