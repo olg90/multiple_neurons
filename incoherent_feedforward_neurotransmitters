@@ -61,7 +61,7 @@ class Neuron:
             neuron.v_history.append(neuron.v_membrane)
             neuron.t_history.append(t_current)
             neuron.t_previous_received_AP = t_current
-            
+
 # =============================================================================
 #         if self.n_type == 'nt':
 #             
@@ -78,7 +78,6 @@ class Neuron:
             t_difference = t_current - neuron.t_previous_received_AP
             voltage_addition = self.c*self.b
 
-            
             neuron.v_membrane = get_v_nt(t_difference, b = self.b, v_0 = neuron.v_membrane,
                                          n_0 = self.n_c, lam = self.lam, tau_v = neuron.tau_v,
                                          mu = self.mu, n_r = self.n_r) \
@@ -87,24 +86,11 @@ class Neuron:
                                lam = self.lam, n_r = self.n_r) \
                                 + self.b*self.n_r
 
-    # FIX HERE NEED SOMETHING FOR NEW B.  Need b_previous and b_next
-    
     
             neuron.v_history.append(neuron.v_membrane)
             neuron.n_c_history.append(self.n_c)
             neuron.t_history.append(t_current)
             neuron.t_previous_received_AP = t_current
-
-def get_v_nt(t, b, v_0, n_0, lam, tau_v, mu, n_r):
-    
-    A = 1/(lam*(-1+lam*tau_v))*np.exp(-t*(lam + 1/tau_v))
-    B = lam*(-np.exp(t/tau_v)*n_0*mu*tau_v + np.exp(lam*t)*(-v_0 + lam*v_0*tau_v + n_0*mu*t))
-    C = b*mu*tau_v*(np.exp(t/tau_v)-np.exp(lam*t)*lam*tau_v + np.exp(t*(lam+1/tau_v))*(-1+lam*tau_v))*n_r
-    return A*(B+C)
-
-def get_n_c(t, n_0, b, lam, n_r):
-    return np.exp(-lam*t)*(lam*n_0 + b*(-1+np.exp(lam*t))*n_r)/lam
-
 
     def fire_AP(self, t_current):
         # Check for over threshold action potential firing
@@ -140,6 +126,17 @@ def get_n_c(t, n_0, b, lam, n_r):
         
     def firing_condition(self):
         return self.v_membrane >= self.vth
+    
+    
+def get_v_nt(t, b, v_0, n_0, lam, tau_v, mu, n_r):
+    
+    A = 1/(lam*(-1+lam*tau_v))*np.exp(-t*(lam + 1/tau_v))
+    B = lam*(-np.exp(t/tau_v)*n_0*mu*tau_v + np.exp(lam*t)*(-v_0 + lam*v_0*tau_v + n_0*mu*t))
+    C = b*mu*tau_v*(np.exp(t/tau_v)-np.exp(lam*t)*lam*tau_v + np.exp(t*(lam+1/tau_v))*(-1+lam*tau_v))*n_r
+    return A*(B+C)
+
+def get_n_c(t, n_0, b, lam, n_r):
+    return np.exp(-lam*t)*(lam*n_0 + b*(-1+np.exp(lam*t))*n_r)/lam
 
 def to_dict(**x):
     return x
@@ -307,16 +304,6 @@ def incoherent_feedforward(f1, params_dict, end_time):
 
     return n12, n13, n2, n_pre, n_post, n3
 
-def get_v_nt(t, b, v_0, n_0, lam, tau_v, mu, n_r):
-    
-    A = 1/(lam*(-1+lam*tau_v))*np.exp(-t*(lam + 1/tau_v))
-    B = lam*(-np.exp(t/tau_v)*n_0*mu*tau_v + np.exp(lam*t)*(-v_0 + lam*v_0*tau_v + n_0*mu*t))
-    C = b*mu*tau_v*(np.exp(t/tau_v)-np.exp(lam*t)*lam*tau_v + np.exp(t*(lam+1/tau_v))*(-1+lam*tau_v))*n_r
-    return A*(B+C)
-
-def get_n_c(t, n_0, b, lam, n_r):
-    return np.exp(-lam*t)*(lam*n_0 + b*(-1+np.exp(lam*t))*n_r)/lam
-
 ###############################################################################
 #
 #                               Main code
@@ -446,4 +433,3 @@ plt.show()
 # n0 = 1
 # v0 = 1
 # =============================================================================
-
