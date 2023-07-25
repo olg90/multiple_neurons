@@ -338,9 +338,9 @@ params_dict = to_dict(M1 = 100, M2 = 100,
                       k1 = 2, k2 = 0.5,
                       tau_v2 = 0.2, tau_v3 = 0.1,
                       vth2 = 0.2, vth3 = 0.2,
-                      mu2 = 10, nr2 = 0.1, lam2 = 0.1,
+                      mu2 = 1, nr2 = 0.1, lam2 = 0.1,
                       n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
-                      delay_timer_value = 0.2,
+                      delay_timer_value = 0.01,
                       run_time = run_time)
 
 n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
