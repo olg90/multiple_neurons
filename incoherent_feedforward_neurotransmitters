@@ -80,7 +80,6 @@ class Neuron:
         if self.n_type == 'nt':
             t_difference = t_current - neuron.t_previous_received_AP
             voltage_addition = self.c*self.b
-            print('pre', neuron.v_membrane)
             neuron.v_membrane = get_v_nt(t_difference, b = self.b, v_0 = neuron.v_membrane,
                                          n_0 = self.n_c, lam = self.lam, tau_v = neuron.tau_v,
                                          mu = self.mu, n_r = self.n_r) \
@@ -88,8 +87,6 @@ class Neuron:
             self.n_c = get_n_c(t_difference, n_0 = self.n_c, b = self.b_previous, 
                                lam = self.lam, n_r = self.n_r) \
                                 + self.b*self.n_r
-            print('post', neuron.v_membrane)
-
     
             neuron.v_history.append(neuron.v_membrane)
             neuron.n_c_history.append(self.n_c)
@@ -276,9 +273,9 @@ def incoherent_feedforward(f1, params_dict, end_time):
                 n2.update_voltage(t_current_delayed, n3)
                 n2.fire_AP(t_current_delayed)
                 n2.delay_timer = 'none'
-                
+
         t_current = t_current + add_time
-        
+
         n13.refill_release_vesicles(t_current)
         n12.refill_release_vesicles(t_current)
 
@@ -290,11 +287,11 @@ def incoherent_feedforward(f1, params_dict, end_time):
 
         if n_post.firing_condition() == True:
             n_post.fire_AP(t_current)
-       
+
         if n3.firing_condition() == True and n2.firing_condition() == False:
             n3.fire_AP(t_current)
-            
-        elif (n3.firing_condition() == False and n2.firing_condition() == True):
+
+        if (n3.firing_condition() == False and n2.firing_condition() == True):
             
             if n2.delay_timer == 'none':
                 n2.delay_timer = n2.delay_timer_value
@@ -305,7 +302,7 @@ def incoherent_feedforward(f1, params_dict, end_time):
 #             pass
 # =============================================================================
 
-        elif n3.firing_condition() == True and n2.firing_condition() == True:
+        if n3.firing_condition() == True and n2.firing_condition() == True:
             if n2.delay_timer == 'none':
                 n2.delay_timer = n2.delay_timer_value
             n2.refill_release_vesicles(t_current)
