@@ -269,9 +269,11 @@ def incoherent_feedforward(f1, params_dict, end_time):
                 n2.delay_timer -= add_time
             if t_diff <= 0:
                 t_current_delayed = t_current + n2.delay_timer
-                n2.refill_release_vesicles(t_current_delayed)
                 n2.update_voltage(t_current_delayed, n3)
-                n2.fire_AP(t_current_delayed)
+# =============================================================================
+#                 n2.refill_release_vesicles(t_current_delayed)
+#                 n2.fire_AP(t_current_delayed)
+# =============================================================================
                 n2.delay_timer = 'none'
 
         t_current = t_current + add_time
@@ -291,7 +293,7 @@ def incoherent_feedforward(f1, params_dict, end_time):
         if n3.firing_condition() == True and n2.firing_condition() == False:
             n3.fire_AP(t_current)
 
-        if (n3.firing_condition() == False and n2.firing_condition() == True):
+        elif (n3.firing_condition() == False and n2.firing_condition() == True):
             
             if n2.delay_timer == 'none':
                 n2.delay_timer = n2.delay_timer_value
@@ -371,8 +373,9 @@ plt.show()
 #                       k1 = 2, k2 = 0.5,
 #                       tau_v2 = 0.2, tau_v3 = 0.1,
 #                       vth2 = 0.2, vth3 = 0.2,
-#                       nr2 = 10, mu2 = 20, lam2 = 1,
+#                       mu2 = 1, nr2 = 0.1, lam2 = 0.1,
 #                       n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
+#                       delay_timer_value = 1e-6,
 #                       run_time = run_time)
 # 
 # f_list = np.arange(1, 100)
@@ -410,6 +413,7 @@ plt.show()
 # plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, \ntau_v2 = {}, tau_v3 = {}'.format(
 #     n2.M, n2.pr, n2.c, n2.k, n2.tau_v, n3.tau_v))
 # plt.plot(f_list, 0*np.ones(len(f_list)), color = 'black')
+# plt.plot([], [], ' ', label = 'Delay = {}'.format(n2.delay_timer_value))
 # plt.plot([], [], ' ', label = '-----------------------')
 # plt.plot([], [], ' ', label = '$v\'=mu*n_c-v/tau$\tmu = {}\n$n\'_c=n_r*b-lam*n_c$\t n_r = {}, lam = {}'.format(n2.mu,n2.n_r,n2.lam))
 # 
@@ -418,7 +422,7 @@ plt.show()
 # plt.xticks(fontsize=fontsize)
 # plt.yticks(fontsize=fontsize)
 # plt.legend(fontsize = fontsize - 5, frameon = True, 
-#            edgecolor = 'black', framealpha = 1, loc = 'lower right')
+#            edgecolor = 'black', framealpha = 0.7, loc = 'lower right')
 # plt.show()
 # 
 # plt.figure()
@@ -431,8 +435,7 @@ plt.show()
 # plt.xticks(fontsize=fontsize)
 # plt.yticks(fontsize=fontsize)
 # plt.legend(fontsize = fontsize - 5, frameon = True, 
-#            edgecolor = 'black', framealpha = 1, loc = 'upper right')
-# 
+#            edgecolor = 'black', framealpha = 0.7, loc = 'upper right')
 # plt.show()
 # =============================================================================
 
