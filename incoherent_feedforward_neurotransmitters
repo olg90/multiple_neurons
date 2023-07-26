@@ -270,6 +270,8 @@ def incoherent_feedforward(f1, params_dict, end_time):
             if t_diff <= 0:
                 t_current_delayed = t_current + n2.delay_timer
                 n2.update_voltage(t_current_delayed, n3)
+                if n3.firing_condition() == True:
+                    n3.fire_AP(t_current_delayed)
 # =============================================================================
 #                 n2.refill_release_vesicles(t_current_delayed)
 #                 n2.fire_AP(t_current_delayed)
@@ -283,9 +285,12 @@ def incoherent_feedforward(f1, params_dict, end_time):
 
         n13.update_voltage(t_current, n3)
         n12.update_voltage(t_current, n2)
+        
+
 
         n_pre.refill_release_vesicles(t_current)
         n_pre.update_voltage(t_current, n_post)
+        
 
         if n_post.firing_condition() == True:
             n_post.fire_AP(t_current)
@@ -298,13 +303,14 @@ def incoherent_feedforward(f1, params_dict, end_time):
             if n2.delay_timer == 'none':
                 n2.delay_timer = n2.delay_timer_value
             n2.refill_release_vesicles(t_current)
+            
             n2.fire_AP(t_current)
 # =============================================================================
 #         if n3.firing_condition() == False and n2.firing_condition() == False:
 #             pass
 # =============================================================================
 
-        if n3.firing_condition() == True and n2.firing_condition() == True:
+        elif n3.firing_condition() == True and n2.firing_condition() == True:
             if n2.delay_timer == 'none':
                 n2.delay_timer = n2.delay_timer_value
             n2.refill_release_vesicles(t_current)
@@ -329,115 +335,119 @@ def incoherent_feedforward(f1, params_dict, end_time):
 # v' = mu*n_c - v/tau
 # n'_c = n_r*b-lam*n_c
 
-run_time = 1
-
-params_dict = to_dict(M1 = 100, M2 = 100,
-                      pr1 = 0.3, pr2 = 0.3,
-                      c1 = 0.02, c2 = -0.175,
-                      k1 = 2, k2 = 0.5,
-                      tau_v2 = 0.2, tau_v3 = 0.1,
-                      vth2 = 0.2, vth3 = 0.2,
-                      mu2 = 1, nr2 = 0.1, lam2 = 0.1,
-                      n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
-                      delay_timer_value = 0.01,
-                      run_time = run_time)
-
-n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
-n2.get_data()
-t2, v2 = get_mod_v_hist(n2)
-t3, v3 = get_mod_v_hist(n3)
-t_post, v_post = get_mod_v_hist(n_post)
-
-plt.plot(t3, v3, label = 'v3')
-plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
-plt.plot(t3, 0*np.ones(len(t3)), color = 'k')
-plt.plot(t2, v2, label = 'v2')
-plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
-# =============================================================================
-# plt.plot(t_post, v_post, label = 'v_post')
-# plt.plot(t_post, n_post.vth*np.ones(len(t_post)), label = 'v_post')
-# =============================================================================
-plt.plot([], [], ' ', label = 'f = {}'.format(np.around(n3.mean_frequency,3)))
-# =============================================================================
-# plt.plot(t_post, v_post, label = 'n_post')
-# =============================================================================
-plt.legend()
-plt.show()
+# IT MUST BE THE CASE THAT (   lam != 1/tau   ) OTHERWISE UPDATE_VOLTAGE WILL FAIL
 
 # =============================================================================
 # run_time = 60
 # 
+# # IT MUST BE THE CASE THAT ( lam != 1/tau ) OTHERWISE UPDATE_VOLTAGE WILL FAIL
 # params_dict = to_dict(M1 = 100, M2 = 100,
 #                       pr1 = 0.3, pr2 = 0.3,
 #                       c1 = 0.02, c2 = -0.175,
 #                       k1 = 2, k2 = 0.5,
-#                       tau_v2 = 0.2, tau_v3 = 0.1,
 #                       vth2 = 0.2, vth3 = 0.2,
-#                       mu2 = 1, nr2 = 0.1, lam2 = 0.1,
+#                       tau_v2 = 0.2, tau_v3 = 0.1,
+#                       mu2 = 0.01, nr2 = 0.01, lam2 = 0.01,
 #                       n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
-#                       delay_timer_value = 1e-6,
+#                       delay_timer_value = 0.001,
 #                       run_time = run_time)
 # 
-# f_list = np.arange(1, 100)
+# n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(50, params_dict, run_time)
+# n2.get_data()
+# t2, v2 = get_mod_v_hist(n2)
+# t3, v3 = get_mod_v_hist(n3)
+# t_post, v_post = get_mod_v_hist(n_post)
+# 
+# plt.plot(t3, v3, label = 'v3')
+# plt.plot(t3, n3.vth*np.ones(len(t3)), label = 'vth3')
+# plt.plot(t3, 0*np.ones(len(t3)), color = 'k')
+# plt.plot(t2, v2, label = 'v2')
+# plt.plot(t2, n2.vth*np.ones(len(t2)), label = 'vth2')
 # # =============================================================================
-# # f_list = np.linspace(1,100, 1000) 
+# # plt.plot(t_post, v_post, label = 'v_post')
+# # plt.plot(t_post, n_post.vth*np.ones(len(t_post)), label = 'v_post')
 # # =============================================================================
-# frequency_array_2 = np.zeros(len(f_list))
-# frequency_array_3 = frequency_array_2.copy()
-# cv2_2 = np.zeros(len(f_list))
-# cv2_3 = cv2_2.copy()
-# cv2_post = cv2_2.copy()
-# 
-# frequency_array_post = np.zeros(len(f_list))
-# for i, f in enumerate(f_list): # y axis
-#     print(i/len(f_list))
-#     n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(f, params_dict, run_time)
-#     frequency_array_3[i] = n3.mean_frequency
-#     frequency_array_2[i] = n2.mean_frequency
-#     cv2_2[i] = n2.cv2
-#     cv2_3[i] = n3.cv2
-#     frequency_array_post[i] = n_post.mean_frequency
-#     cv2_post[i] = n_post.cv2
-# 
-# fontsize = 20
-# plt.figure()
-# plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
-# plt.plot(f_list, frequency_array_3, label = 'IFF: Output neuron')
-# plt.plot(f_list, frequency_array_2, label = 'IFF: Inhibitatory interneuron')
-# plt.plot(f_list, frequency_array_post, label = 'Open loop output neuron')
-# plt.plot([], [], ' ', label = '-----------------------')
-# plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}'.format(
-#     n12.M, n12.pr, n12.c, n12.k))
-# plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}'.format(
-#     n13.M, n13.pr, n13.c, n13.k))
-# plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, \ntau_v2 = {}, tau_v3 = {}'.format(
-#     n2.M, n2.pr, n2.c, n2.k, n2.tau_v, n3.tau_v))
-# plt.plot(f_list, 0*np.ones(len(f_list)), color = 'black')
-# plt.plot([], [], ' ', label = 'Delay = {}'.format(n2.delay_timer_value))
-# plt.plot([], [], ' ', label = '-----------------------')
-# plt.plot([], [], ' ', label = '$v\'=mu*n_c-v/tau$\tmu = {}\n$n\'_c=n_r*b-lam*n_c$\t n_r = {}, lam = {}'.format(n2.mu,n2.n_r,n2.lam))
-# 
-# plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
-# plt.ylabel('AP firing frequency (Hz)', fontsize=fontsize)
-# plt.xticks(fontsize=fontsize)
-# plt.yticks(fontsize=fontsize)
-# plt.legend(fontsize = fontsize - 5, frameon = True, 
-#            edgecolor = 'black', framealpha = 0.7, loc = 'lower right')
-# plt.show()
-# 
-# plt.figure()
-# plt.title('CV2', fontsize = fontsize)
-# plt.plot(cv2_3, label = 'IFF: Output neuron')
-# plt.plot(cv2_2, label = 'IFF: Inhibitatory interneuron')
-# plt.plot(cv2_post, label = 'Open loop: Output neuron')
-# plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
-# plt.ylabel('CV2', fontsize=fontsize)
-# plt.xticks(fontsize=fontsize)
-# plt.yticks(fontsize=fontsize)
-# plt.legend(fontsize = fontsize - 5, frameon = True, 
-#            edgecolor = 'black', framealpha = 0.7, loc = 'upper right')
+# plt.plot([], [], ' ', label = 'f = {}'.format(np.around(n3.mean_frequency,3)))
+# # =============================================================================
+# # plt.plot(t_post, v_post, label = 'n_post')
+# # =============================================================================
+# plt.legend()
 # plt.show()
 # =============================================================================
+
+run_time = 60
+
+# IT MUST BE THE CASE THAT ( lam != 1/tau ) OTHERWISE UPDATE_VOLTAGE WILL FAIL
+params_dict = to_dict(M1 = 100, M2 = 100,
+                      pr1 = 0.3, pr2 = 0.3,
+                      c1 = 0.02, c2 = -0.175,
+                      k1 = 2, k2 = 0.5,
+                      vth2 = 0.2, vth3 = 0.2,
+                      tau_v2 = 0.1, tau_v3 = 0.1,
+                      mu2 = 0.01, nr2 = 0.01, lam2 = 0.01,
+                      n_type1 = 'non nt', n_type2 = 'nt', n_type3 = 'non nt',
+                      delay_timer_value = 0.001,
+                      run_time = run_time)
+
+f_list = np.arange(1, 100)
+# =============================================================================
+# f_list = np.linspace(1,100, 1000) 
+# =============================================================================
+frequency_array_2 = np.zeros(len(f_list))
+frequency_array_3 = frequency_array_2.copy()
+cv2_2 = np.zeros(len(f_list))
+cv2_3 = cv2_2.copy()
+cv2_post = cv2_2.copy()
+
+frequency_array_post = np.zeros(len(f_list))
+for i, f in enumerate(f_list): # y axis
+    print(i/len(f_list))
+    n12, n13, n2, n_pre, n_post, n3 = incoherent_feedforward(f, params_dict, run_time)
+    frequency_array_3[i] = n3.mean_frequency
+    frequency_array_2[i] = n2.mean_frequency
+    cv2_2[i] = n2.cv2
+    cv2_3[i] = n3.cv2
+    frequency_array_post[i] = n_post.mean_frequency
+    cv2_post[i] = n_post.cv2
+
+fontsize = 20
+plt.figure()
+plt.title('Incoherent feed forward network: \nmean firing frequency of third neuron', fontsize=fontsize)
+plt.plot(f_list, frequency_array_3, label = 'IFF: Output neuron')
+plt.plot(f_list, frequency_array_2, label = 'IFF: Inhibitatory interneuron')
+plt.plot(f_list, frequency_array_post, label = 'Open loop output neuron')
+plt.plot([], [], ' ', label = '-----------------------')
+plt.plot([], [], ' ', label = 'M12 = {}, pr12 = {}, c12 = {}, k12 = {}'.format(
+    n12.M, n12.pr, n12.c, n12.k))
+plt.plot([], [], ' ', label = 'M13 = {}, pr13 = {}, c13 = {}, k13 = {}'.format(
+    n13.M, n13.pr, n13.c, n13.k))
+plt.plot([], [], ' ', label = 'M23 = {}, pr23 = {}, c23 = {}, k23 = {}, \ntau_v2 = {}, tau_v3 = {}'.format(
+    n2.M, n2.pr, n2.c, n2.k, n2.tau_v, n3.tau_v))
+plt.plot(f_list, 0*np.ones(len(f_list)), color = 'black')
+plt.plot([], [], ' ', label = 'Delay = {}'.format(n2.delay_timer_value))
+plt.plot([], [], ' ', label = '-----------------------')
+plt.plot([], [], ' ', label = '$v\'=mu*n_c-v/tau$\tmu = {}\n$n\'_c=n_r*b-lam*n_c$\t n_r = {}, lam = {}'.format(n2.mu,n2.n_r,n2.lam))
+
+plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
+plt.ylabel('AP firing frequency (Hz)', fontsize=fontsize)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
+plt.legend(fontsize = fontsize - 5, frameon = True, 
+           edgecolor = 'black', framealpha = 0.5, loc = 'lower right')
+plt.show()
+
+plt.figure()
+plt.title('CV2', fontsize = fontsize)
+plt.plot(cv2_3, label = 'IFF: Output neuron')
+plt.plot(cv2_2, label = 'IFF: Inhibitatory interneuron')
+plt.plot(cv2_post, label = 'Open loop: Output neuron')
+plt.xlabel('Input neuron frequency (Hz)', fontsize=fontsize)
+plt.ylabel('CV2', fontsize=fontsize)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
+plt.legend(fontsize = fontsize - 5, frameon = True, 
+           edgecolor = 'black', framealpha = 0.5, loc = 'upper right')
+plt.show()
 
 # https://www.ncbi.nlm.nih.gov/books/NBK10921/
 # 0.5 - 10 m/s for unmylineated, up to 150 m/s for mylineated
