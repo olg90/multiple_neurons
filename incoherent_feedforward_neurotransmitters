@@ -483,3 +483,99 @@ plt.show()
 # n0 = 1
 # v0 = 1
 # =============================================================================
+
+# =============================================================================
+# import numpy as np
+# # =============================================================================
+# # from scipy.integrate import odeint
+# # =============================================================================
+# import matplotlib.pyplot as plt
+# 
+# # Define the system of differential equations
+# def system_of_equations(args, t, mu, tau_v, n_r, lam, b):
+#     v, n_c = args
+#     dv_dt = mu * n_c - v / tau_v
+#     d_n_c_dt = n_r * b - lam * n_c
+#     return [dv_dt, d_n_c_dt]
+# 
+# mu = 2
+# tau_v = 1
+# n_r = 1
+# lam = 2
+# b = 4
+# max_time = 10
+# 
+# v_0 = 0
+# n_c_0 = 10
+# 
+# v_list = [v_0]
+# n_c_list = [n_c_0]
+# times = [0]
+# delta_t = 0.01
+# 
+# v_ss = tau_v*mu*n_r*b/lam
+# n_c_ss = n_r*b/lam
+# 
+# while times[-1] < max_time:
+#    
+#     dv_dt = mu * n_c_list[-1] - v_list[-1] / tau_v
+#     d_n_c_dt = n_r * b - lam * n_c_list[-1]
+#    
+#     v_new = v_list[-1] + dv_dt*delta_t
+#     n_c_new = n_c_list[-1] + d_n_c_dt*delta_t
+#    
+#     v_list.append(v_new)
+#     n_c_list.append(n_c_new)
+#     times.append(times[-1] + delta_t)
+# plt.clf()
+# fontsize = 20
+# plt.plot(times, v_list, label='v(t)')
+# plt.plot(times, n_c_list, label='n_c(t)')
+# plt.plot(times, v_ss*np.ones(len(times)), label='v steady state')
+# plt.plot(times, n_c_ss*np.ones(len(times)), label='n_c steady state')
+# plt.xlabel('Time', fontsize = fontsize)
+# plt.ylabel('Values', fontsize = fontsize)
+# plt.legend(loc = 'upper right', fontsize = fontsize - 5)
+# plt.xticks(fontsize = fontsize)
+# plt.yticks(fontsize = fontsize)
+# plt.grid()
+# plt.show()
+# 
+# 
+# # Set up the initial conditions and time points
+# 
+# # =============================================================================
+# # v_0 = 20
+# # n_c_0 = 1
+# # init_vals = [v_0, n_c_0]
+# #
+# # mu = 0.8
+# # tau_v = 1
+# # n_r = 1
+# # lam = 0.1
+# # b = 1
+# #
+# # v_ss = tau_v*mu*n_r*b/lam
+# # n_c_ss = n_r*b/lam
+# #
+# # t = np.linspace(0,100, 1000)
+# # # =============================================================================
+# # # t = np.cumsum([0.01 for i in range(10000)])
+# # # =============================================================================
+# #
+# # # Solve the system of differential equations using odeint
+# # sol = odeint(system_of_equations, init_vals, t, args=(mu, tau_v, n_r, lam, b))
+# # plt.clf()
+# # # Plot the results using Matplotlib
+# # plt.plot(t, sol[:, 0], label='v(t)')
+# # plt.plot(t, sol[:, 1], label='n_c(t)')
+# # plt.plot(t, v_ss*np.ones(len(t)), label='v steady state')
+# # plt.plot(t, n_c_ss*np.ones(len(t)), label='n_c steady state')
+# # plt.xlabel('Time')
+# # plt.ylabel('Values')
+# # plt.legend()
+# # plt.grid()
+# # plt.show()
+# # =============================================================================
+# 
+# =============================================================================
