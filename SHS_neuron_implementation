@@ -1,0 +1,98 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+def get_time_to(text, f, k, M, n, lam):
+    
+    if text == 'f':
+        return np.random.exponential(f) # next reaction time
+    if text == 'n':
+        return np.random.exponential(k*(M-n))
+    if text == 'n_c':
+        return np.random.exponential(lam)
+
+n_trials = 30 #number of trials
+
+delta_t = 0.01
+
+
+f = 50
+k = 20
+lam = 10
+tau_v = 1
+M = 20
+pr = 0.3
+c = 0.002
+n_r = 0.01
+tau_v = 10
+run_time = 10
+
+for n in range(n_trials):
+
+    t_current = 0
+    v_membrane = 0
+    
+    n = 10
+    n_c = 0
+    
+    n_history = [[n, t_current]]
+    n_c_history = [[n_c, t_current]]
+    v_history=[[v_membrane,t_current]] # data array
+    
+    time_to_f = np.random.exponential(f) # next reaction time
+    time_to_n = np.random.exponential(k*(M-n))
+    time_to_n_c = np.random.exponential(lam)
+    t_measure = delta_t #next time for measurement
+    
+    times_array = np.array([time_to_f, time_to_n, time_to_n_c, t_measure])
+    
+    while t_current < run_time:
+        
+        t_min_arg = np.argmin(times_array)
+        t_min = times_array[t_min_arg]
+        
+        if t_min_arg == 0:
+            
+            b = np.random.binomial(n, pr)
+            v_membrane += c*b
+            n -= b
+            n_c += b*n_r
+            
+            t_current += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = get_time_to('f', f, k, M, n, lam)
+            
+        elif t_min_arg == 1:
+            
+            n += 1
+            
+            t_current += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = get_time_to('n', f, k, M, n, lam)
+            
+        elif t_min_arg == 2:
+            
+            n_c -= 1
+            
+            t_current += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = get_time_to('n_c', f, k, M, n, lam)
+
+        else:
+            v_membrane*=np.exp(-delta_t/tau_v)
+            
+            v_history.append([v_membrane, t_current])
+
+            t_current += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = delta_t
+            
+
+    df=pd.DataFrame(v_history, columns=['X','Time'])
+
+    plt.plot(df.Time,df.X,c='#bebebe',lw=1)
+    
+# =============================================================================
+# v_membrane = np.linspace(0,10,100)
+# plt.plot(x,(km/alpha)*(1-np.exp(-alpha*v_membrane)),'k--',lw=2)
+# =============================================================================
