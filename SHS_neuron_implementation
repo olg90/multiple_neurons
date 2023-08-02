@@ -1,23 +1,24 @@
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 def get_time_to(text, f, k, M, n, lam):
     
     if text == 'f':
-        return np.random.exponential(1/f) # next reaction time
+        return np.random.exponential(1./f) # next reaction time
     if text == 'n':
-        return np.random.exponential(1/(k*(M-n)))
+        return np.random.exponential(1./(k*(M-n)))
     if text == 'n_c':
-        return np.random.exponential(1/lam)
+        return np.random.exponential(1./lam)
 
 
-run_time = 60
-n_trials = 1 #number of trials
+run_time = 1
 
-f = 50
-k = 0.01
-lam = 0.01
+# Mean of rates
+f = 50 # AP
+k = 10 # Refill n |--> n+1
+lam = 10 # Remove n_c |--> n_c - 1
+
+# Parameters
 tau_v = 1
 M = 100
 pr = 0.3
@@ -26,38 +27,41 @@ n_r = 0.01
 tau_v = 1
 vth = 0.2
 
+n = 10
+n_c = 100
+
+
 delta_t = 0.01
-
-
-
 
 t_current = 0
 v_membrane = 0
-
-n = 10
-n_c = 0
 
 n_history = [[n, t_current]]
 n_c_history = [[n_c, t_current]]
 v_history=[[v_membrane,t_current]] # data array
 b_history = []
 
-time_to_f = np.random.exponential(f) # next reaction time
-time_to_n = np.random.exponential(k*(M-n))
-time_to_n_c = np.random.exponential(lam)
+time_to_f = get_time_to('f', f, k, M, n, lam) # next reaction time
+time_to_n = get_time_to('n', f, k, M, n, lam)
+time_to_n_c = get_time_to('n_c', f, k, M, n, lam)
 t_measure = delta_t #next time for measurement
 
 times_array = np.array([time_to_f, time_to_n, time_to_n_c, t_measure])
 
+
+
 while t_current < run_time:
-    
+
     t_min_arg = np.argmin(times_array)
     t_min = times_array[t_min_arg]
-    
+
     if t_min_arg == 0:
-        
+
         b = np.random.binomial(n, pr)
+        print(b, 'released')
+        print(n, n_c, 'n, n_c')
         b_history.append(b)
+        v_membrane*=np.exp(-delta_t/tau_v)
         v_membrane += c*b
         n -= b
         n_c += b*n_r
@@ -73,21 +77,23 @@ while t_current < run_time:
         
         n += 1
         
+        v_membrane*=np.exp(-delta_t/tau_v)
         t_current += t_min
         times_array -= t_min
         times_array[t_min_arg] = get_time_to('n', f, k, M, n, lam)
         
     elif t_min_arg == 2:
         
+        
         n_c -= 1
         
+        v_membrane*=np.exp(-delta_t/tau_v)
         t_current += t_min
         times_array -= t_min
         times_array[t_min_arg] = get_time_to('n_c', f, k, M, n, lam)
 
     else:
         v_membrane*=np.exp(-delta_t/tau_v)
-        
         v_history.append([v_membrane, t_current])
 
         t_current += t_min
