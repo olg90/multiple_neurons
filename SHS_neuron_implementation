@@ -8,7 +8,6 @@ def get_time_to(text, f, k, M, n):
     if text == 'n':
         return np.random.exponential(1./(k*(M-n)))
 
-    
 def get_v(t, lam, tau_v, mu, n0, v0):
     A = np.exp(-t*(lam + 1/tau_v))
     B = -np.exp(t/tau_v)*mu*tau_v + np.exp(lam*t)*(n0*mu*tau_v + v0*(-1+lam*tau_v))
@@ -20,18 +19,18 @@ def get_n_c(t, lam, n0):
     return n0*np.exp(-lam*t)
 
 
-run_time = 60
+run_time = 10
 
 # Rates (#/s)
 f = 50 # AP/s
-k = 1 # Refill/s (n |--> n+1)
+k = 10 # Refill/s (n |--> n+1)
 
 mu = 0.001 # nt voltage coefficient, high means nt's add a lot of voltage
 tau_v = 1 # voltage decay rate
-lam = 100 # nt decay rate, high means NT decays so fast that it barely adds voltage
+lam = 500 # nt decay rate, high means NT decays so fast that it barely adds voltage
 M = 100
 pr = 0.3
-n_r = 100
+n_r = 100 # number of neurotransmitters released per AP
 vth = 0.2
 
 if lam*tau_v == 1:
@@ -146,8 +145,10 @@ plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r 
                                 f, k, M, pr, vth, n_r))
 plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
 plt.plot([], [], ' ', label = '---------------------------------------')
-plt.plot([], [], ' ', label = 'v\' = mu*n_c - v/tau\nn\'_c = -lam*n_c')
-plt.legend(loc = 'upper right', framealpha = 0.5)
+plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+plt.legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k')
+plt.ylabel('Membrane voltage')
+plt.xlabel('Time')
 plt.show()
 
 # =============================================================================
