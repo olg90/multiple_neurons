@@ -1,106 +1,155 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def get_time_to(text, f, k, M, n, lam):
+def get_time_to(text, f, k, M, n):
     
     if text == 'f':
         return np.random.exponential(1./f) # next reaction time
     if text == 'n':
         return np.random.exponential(1./(k*(M-n)))
-    if text == 'n_c':
-        return np.random.exponential(1./lam)
+
+    
+def get_v(t, lam, tau_v, mu, n0, v0):
+    A = np.exp(-t*(lam + 1/tau_v))
+    B = -np.exp(t/tau_v)*mu*tau_v + np.exp(lam*t)*(n0*mu*tau_v + v0*(-1+lam*tau_v))
+    C = -1 + lam*tau_v
+    
+    return A*B/C
+
+def get_n_c(t, lam, n0):
+    return n0*np.exp(-lam*t)
 
 
-run_time = 1
+run_time = 60
 
-# Mean of rates
-f = 50 # AP
-k = 10 # Refill n |--> n+1
-lam = 10 # Remove n_c |--> n_c - 1
+# Rates (#/s)
+f = 50 # AP/s
+k = 1 # Refill/s (n |--> n+1)
 
-# Parameters
-tau_v = 1
+mu = 0.001 # nt voltage coefficient, high means nt's add a lot of voltage
+tau_v = 1 # voltage decay rate
+lam = 100 # nt decay rate, high means NT decays so fast that it barely adds voltage
 M = 100
 pr = 0.3
-c = 0.02
-n_r = 0.01
-tau_v = 1
+n_r = 100
 vth = 0.2
 
-n = 10
-n_c = 100
-
+if lam*tau_v == 1:
+    raise Exception('Error: lam*tau_v == 1')
 
 delta_t = 0.01
 
 t_current = 0
 v_membrane = 0
+n_c = 0
+n = 10
 
 n_history = [[n, t_current]]
 n_c_history = [[n_c, t_current]]
 v_history=[[v_membrane,t_current]] # data array
 b_history = []
+AP_times = []
 
-time_to_f = get_time_to('f', f, k, M, n, lam) # next reaction time
-time_to_n = get_time_to('n', f, k, M, n, lam)
-time_to_n_c = get_time_to('n_c', f, k, M, n, lam)
+n_bursts = 0
+n_bursts_list = []
+
+time_to_f = get_time_to('f', f, k, M, n) # next reaction time
+time_to_n = get_time_to('n', f, k, M, n)
 t_measure = delta_t #next time for measurement
 
-times_array = np.array([time_to_f, time_to_n, time_to_n_c, t_measure])
+times_array = np.array([time_to_f, time_to_n, t_measure])
 
-
+def get_arg_type(i):
+    if i == 0:
+        return 'f'
+    if i == 1:
+        return 'n'
+    if i == 2:
+        return 'measure'
 
 while t_current < run_time:
 
     t_min_arg = np.argmin(times_array)
+    arg_type = get_arg_type(t_min_arg)
     t_min = times_array[t_min_arg]
 
-    if t_min_arg == 0:
+    if arg_type == 'f':
 
         b = np.random.binomial(n, pr)
-        print(b, 'released')
-        print(n, n_c, 'n, n_c')
         b_history.append(b)
-        v_membrane*=np.exp(-delta_t/tau_v)
-        v_membrane += c*b
+        n_bursts += 1
+
         n -= b
         n_c += b*n_r
         
+        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+        n_c = get_n_c(t_min, lam, n_c)
+        
         if v_membrane >= vth:
             v_membrane = 0
+            AP_times.append(t_current)
+            n_bursts_list.append(n_bursts)
+            n_bursts = 0
         
         t_current += t_min
         times_array -= t_min
-        times_array[t_min_arg] = get_time_to('f', f, k, M, n, lam)
+        times_array[t_min_arg] = get_time_to('f', f, k, M, n)
         
-    elif t_min_arg == 1:
+    elif arg_type == 'n':
         
         n += 1
         
-        v_membrane*=np.exp(-delta_t/tau_v)
+        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+        n_c = get_n_c(t_min, lam, n_c)
+        
+        if v_membrane >= vth:
+            v_membrane = 0
+            AP_times.append(t_current)
+            n_bursts_list.append(n_bursts)
+            n_bursts = 0
+            
         t_current += t_min
         times_array -= t_min
-        times_array[t_min_arg] = get_time_to('n', f, k, M, n, lam)
+        times_array[t_min_arg] = get_time_to('n', f, k, M, n)
         
-    elif t_min_arg == 2:
-        
-        
-        n_c -= 1
-        
-        v_membrane*=np.exp(-delta_t/tau_v)
-        t_current += t_min
-        times_array -= t_min
-        times_array[t_min_arg] = get_time_to('n_c', f, k, M, n, lam)
-
     else:
-        v_membrane*=np.exp(-delta_t/tau_v)
+
+        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+        n_c = get_n_c(t_min, lam, n_c)
+        
+        if v_membrane >= vth:
+            v_membrane = 0       
+            AP_times.append(t_current)
+            n_bursts_list.append(n_bursts)
+            n_bursts = 0
+
         v_history.append([v_membrane, t_current])
+        n_c_history.append([n_c, t_current])
 
         t_current += t_min
         times_array -= t_min
         times_array[t_min_arg] = delta_t
         
+n_history = np.array(n_history)
+n_c_history = np.array(n_c_history)
+v_history = np.array(v_history) # data array
+b_history = np.array(b_history)
+AP_times = np.array(AP_times)
 
-v_history = np.array(v_history)
+inter_AP_times = np.diff(AP_times)
+mean_inter_AP_time = np.mean(inter_AP_times)
+
 plt.plot(v_history[:, 1], v_history[:, 0])
+plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
+                                f, k, M, pr, vth, n_r))
+plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+plt.plot([], [], ' ', label = '---------------------------------------')
+plt.plot([], [], ' ', label = 'v\' = mu*n_c - v/tau\nn\'_c = -lam*n_c')
+plt.legend(loc = 'upper right', framealpha = 0.5)
 plt.show()
+
+# =============================================================================
+# plt.plot(n_c_history[:, 1], n_c_history[:, 0])
+# =============================================================================
