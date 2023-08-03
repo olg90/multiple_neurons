@@ -18,6 +18,9 @@ def get_v(t, lam, tau_v, mu, n0, v0):
 def get_n_c(t, lam, n0):
     return n0*np.exp(-lam*t)
 
+def hill(n_c, H, pr_max):
+    n_c_star = 1
+    return pr_max / (n_c / n_c_star)**H
 
 run_time = 10
 
