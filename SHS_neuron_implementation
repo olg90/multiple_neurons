@@ -164,8 +164,8 @@ k = 10 # Refill/s (n |--> n+1)
 mu = 0.001 # nt voltage coefficient, high means nt's add a lot of voltage
 tau_v = 1 # voltage decay rate
 lam = 500 # nt decay rate, high means NT decays so fast that it barely adds voltage
-M = 100
-pr = 0.3
+M = 300
+pr = 0.2
 n_r = 100 # number of neurotransmitters released per AP
 vth = 0.2
 delta_t = 0.01
@@ -196,13 +196,15 @@ args = to_dict(k = k, mu = mu, lam = lam, M = M, pr = pr, n_r = n_r, vth = vth,
 # plt.ylabel('Membrane voltage')
 # plt.xlabel('Time')
 # plt.show()
-# 
+# =============================================================================
+
+# =============================================================================
 # plt.figure()
 # plt.plot(n_c_history[:, 1], n_c_history[:, 0])
 # plt.show()
 # =============================================================================
 
-f_list = range(50, 101)
+f_list = range(20, 101)
 post_synaptic_mean_AP_freq_list = []
 CV_list = []
 n_bursts_mean_list = []
