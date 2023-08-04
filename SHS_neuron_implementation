@@ -18,48 +18,10 @@ def get_v(t, lam, tau_v, mu, n0, v0):
 def get_n_c(t, lam, n0):
     return n0*np.exp(-lam*t)
 
-def hill(n_c, H, pr_max):
-    n_c_star = 1
-    return pr_max / (n_c / n_c_star)**H
-
-run_time = 10
-
-# Rates (#/s)
-f = 50 # AP/s
-k = 10 # Refill/s (n |--> n+1)
-
-mu = 0.001 # nt voltage coefficient, high means nt's add a lot of voltage
-tau_v = 1 # voltage decay rate
-lam = 500 # nt decay rate, high means NT decays so fast that it barely adds voltage
-M = 100
-pr = 0.3
-n_r = 100 # number of neurotransmitters released per AP
-vth = 0.2
-
-if lam*tau_v == 1:
-    raise Exception('Error: lam*tau_v == 1')
-
-delta_t = 0.01
-
-t_current = 0
-v_membrane = 0
-n_c = 0
-n = 10
-
-n_history = [[n, t_current]]
-n_c_history = [[n_c, t_current]]
-v_history=[[v_membrane,t_current]] # data array
-b_history = []
-AP_times = []
-
-n_bursts = 0
-n_bursts_list = []
-
-time_to_f = get_time_to('f', f, k, M, n) # next reaction time
-time_to_n = get_time_to('n', f, k, M, n)
-t_measure = delta_t #next time for measurement
-
-times_array = np.array([time_to_f, time_to_n, t_measure])
+def hill(x, H, x_max):
+    # x is n_c or k
+    x_star = 1
+    return x / (x / x_star)**H
 
 def get_arg_type(i):
     if i == 0:
@@ -68,92 +30,204 @@ def get_arg_type(i):
         return 'n'
     if i == 2:
         return 'measure'
+    
+def to_dict(**x):
+    return x
 
-while t_current < run_time:
+def run_test(f, args):
+    
+    # Define parameters
+    run_time = args['run_time']
+    k = args['k'] # Refill/s (n |--> n+1)
+    mu = args['mu'] # nt voltage coefficient, high means nt's add a lot of voltage
+    tau_v = args['tau_v'] # voltage decay rate
+    lam = args['lam'] # nt decay rate, high means NT decays so fast that it barely adds voltage
+    M = args['M']
+    pr = args['pr']
+    n_r = args['n_r'] # number of neurotransmitters released per AP
+    vth = args['vth']
 
-    t_min_arg = np.argmin(times_array)
-    arg_type = get_arg_type(t_min_arg)
-    t_min = times_array[t_min_arg]
-
-    if arg_type == 'f':
-
-        b = np.random.binomial(n, pr)
-        b_history.append(b)
-        n_bursts += 1
-
-        n -= b
-        n_c += b*n_r
-        
-        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-        n_c = get_n_c(t_min, lam, n_c)
-        
-        if v_membrane >= vth:
-            v_membrane = 0
-            AP_times.append(t_current)
-            n_bursts_list.append(n_bursts)
-            n_bursts = 0
-        
-        t_current += t_min
-        times_array -= t_min
-        times_array[t_min_arg] = get_time_to('f', f, k, M, n)
-        
-    elif arg_type == 'n':
-        
-        n += 1
-        
-        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-        n_c = get_n_c(t_min, lam, n_c)
-        
-        if v_membrane >= vth:
-            v_membrane = 0
-            AP_times.append(t_current)
-            n_bursts_list.append(n_bursts)
-            n_bursts = 0
+    delta_t = args['delta_t']
+    
+    current_time = 0
+    v_membrane = 0
+    n_c = 0
+    n = 10
+    
+    n_history = [[n, current_time]]
+    n_c_history = [[n_c, current_time]]
+    v_history=[[v_membrane,current_time]] # data array
+    b_history = []
+    AP_times = []
+    
+    n_bursts = 0
+    n_bursts_list = []
+    
+    time_to_f = get_time_to('f', f, k, M, n) # next reaction time
+    time_to_n = get_time_to('n', f, k, M, n)
+    t_measure = delta_t #next time for measurement
+    
+    times_array = np.array([time_to_f, time_to_n, t_measure])
+    
+    
+    
+    while current_time < run_time:
+    
+        t_min_arg = np.argmin(times_array)
+        arg_type = get_arg_type(t_min_arg)
+        t_min = times_array[t_min_arg]
+    
+        if arg_type == 'f':
             
-        t_current += t_min
-        times_array -= t_min
-        times_array[t_min_arg] = get_time_to('n', f, k, M, n)
-        
-    else:
+            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+            n_c = get_n_c(t_min, lam, n_c)
+    
+            b = np.random.binomial(n, pr)
+            b_history.append(b)
+            n_bursts += 1
+    
+            n -= b
+            n_c += b*n_r
+            
+            if v_membrane >= vth:
+                v_membrane = 0
+                AP_times.append(current_time)
+                n_bursts_list.append(n_bursts)
+                n_bursts = 0
+            
+            current_time += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = get_time_to('f', f, k, M, n)
+            
+        elif arg_type == 'n':
+            
+            
+            
+            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+            n_c = get_n_c(t_min, lam, n_c)
+            
+            n += 1
+            
+            if v_membrane >= vth:
+                v_membrane = 0
+                AP_times.append(current_time)
+                n_bursts_list.append(n_bursts)
+                n_bursts = 0
 
-        v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-        n_c = get_n_c(t_min, lam, n_c)
-        
-        if v_membrane >= vth:
-            v_membrane = 0       
-            AP_times.append(t_current)
-            n_bursts_list.append(n_bursts)
-            n_bursts = 0
+            current_time += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = get_time_to('n', f, k, M, n)
+            
+        else:
+    
+            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
+            n_c = get_n_c(t_min, lam, n_c)
+            
+            if v_membrane >= vth:
+                v_membrane = 0       
+                AP_times.append(current_time)
+                n_bursts_list.append(n_bursts)
+                n_bursts = 0
+    
+            v_history.append([v_membrane, current_time])
+            n_c_history.append([n_c, current_time])
+    
+            current_time += t_min
+            times_array -= t_min
+            times_array[t_min_arg] = delta_t
+            
+    n_history = np.array(n_history)
+    n_c_history = np.array(n_c_history)
+    v_history = np.array(v_history) # data array
+    b_history = np.array(b_history)
+    AP_times = np.array(AP_times)
+    
+    inter_AP_times = np.diff(AP_times)
+    mean_inter_AP_time = np.mean(inter_AP_times)
+    CV = np.var(inter_AP_times) / mean_inter_AP_time
+    
+    return {'v_history': np.array(v_history),
+            'n_history':np.array(n_history),
+            'n_c_history':np.array(n_c_history),
+            'b_history':np.array(b_history),
+            'AP_times':np.array(AP_times),
+            'inter_AP_times':np.array(inter_AP_times),
+            'n_bursts_list':np.array(n_bursts_list),
+            'mean_inter_AP_time':mean_inter_AP_time, 
+            'CV':CV}
 
-        v_history.append([v_membrane, t_current])
-        n_c_history.append([n_c, t_current])
+run_time = 60*60
 
-        t_current += t_min
-        times_array -= t_min
-        times_array[t_min_arg] = delta_t
-        
-n_history = np.array(n_history)
-n_c_history = np.array(n_c_history)
-v_history = np.array(v_history) # data array
-b_history = np.array(b_history)
-AP_times = np.array(AP_times)
+# Rates (#/s)
+AP_freq =  50 # AP/s
+k = 10 # Refill/s (n |--> n+1)
+mu = 0.001 # nt voltage coefficient, high means nt's add a lot of voltage
+tau_v = 1 # voltage decay rate
+lam = 500 # nt decay rate, high means NT decays so fast that it barely adds voltage
+M = 100
+pr = 0.3
+n_r = 100 # number of neurotransmitters released per AP
+vth = 0.2
+delta_t = 0.01
 
-inter_AP_times = np.diff(AP_times)
-mean_inter_AP_time = np.mean(inter_AP_times)
+if lam*tau_v == 1:
+    raise Exception('Error: lam*tau_v == 1')
+args = to_dict(k = k, mu = mu, lam = lam, M = M, pr = pr, n_r = n_r, vth = vth,
+               tau_v = tau_v, delta_t = delta_t, run_time = run_time)
 
-plt.plot(v_history[:, 1], v_history[:, 0])
-plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
-plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
-                                f, k, M, pr, vth, n_r))
-plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
-plt.plot([], [], ' ', label = '---------------------------------------')
-plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
-plt.legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k')
-plt.ylabel('Membrane voltage')
-plt.xlabel('Time')
+
+# =============================================================================
+# results = run_test(AP_freq, args)
+# 
+# v_history = results['v_history']
+# n_bursts_list = results['n_bursts_list']
+# mean_inter_AP_time = results['mean_inter_AP_time']
+# n_c_history = results['n_c_history']
+# 
+# plt.plot(v_history[:, 1], v_history[:, 0])
+# plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+# plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+# plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
+#                                 AP_freq, k, M, pr, vth, n_r))
+# plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+# plt.plot([], [], ' ', label = '---------------------------------------')
+# plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+# plt.legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k')
+# plt.ylabel('Membrane voltage')
+# plt.xlabel('Time')
+# plt.show()
+# 
+# plt.figure()
+# plt.plot(n_c_history[:, 1], n_c_history[:, 0])
+# plt.show()
+# =============================================================================
+
+f_list = range(50, 101)
+post_synaptic_mean_AP_freq_list = []
+CV_list = []
+n_bursts_mean_list = []
+for f in f_list:
+    print(f)
+    results = run_test(f, args)
+    post_synaptic_mean_AP_freq_list.append(1./results['mean_inter_AP_time'])
+    CV_list.append(results['CV'])
+    n_bursts_mean_list.append(np.mean(results['n_bursts_list']))
+    
+# =============================================================================
+# plt.figure()
+# plt.plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
+# plt.plot(f_list, CV_list, label = 'CV')
+# plt.show()
+# =============================================================================
+
+fig, ax = plt.subplots(1,3)
+ax[0].plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
+ax[1].plot(f_list, CV_list, label = 'CV')
+ax[2].plot(f_list, n_bursts_mean_list, label = 'Mean num. of bursts')
+
+ax[0].legend()
+ax[1].legend()
+ax[2].legend()
+
 plt.show()
 
-# =============================================================================
-# plt.plot(n_c_history[:, 1], n_c_history[:, 0])
-# =============================================================================
