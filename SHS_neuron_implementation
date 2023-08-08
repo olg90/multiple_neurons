@@ -167,7 +167,7 @@ run_time = 1
 
 # Rates (#/s)
 AP_freq =  50 # AP/s
-k = 20 # Refill/s (n |--> n+1)
+k = 30 # Refill/s (n |--> n+1)
 
 tau_v = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
 lam = 100 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
@@ -184,7 +184,6 @@ if lam*tau_v == 1:
     
 args = to_dict(k = k, mu = mu, lam = lam, M = M, pr = pr, n_r = n_r, vth = vth,
                tau_v = tau_v, delta_t = delta_t, run_time = run_time)
-
 
 results = run_test(AP_freq, args)
 
