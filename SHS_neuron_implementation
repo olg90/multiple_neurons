@@ -59,18 +59,20 @@ def run_test(f, args):
     
     n_history = [[n, current_time]]
     n_c_history = [[n_c, current_time]]
-    v_history=[[v_membrane,current_time]] # data array
+    v_history = [[v_membrane,current_time]] # data array
     b_history = []
     AP_times = []
     
     n_bursts = 0
     n_bursts_list = []
+    
+    t_measure = delta_t
+    
 
     while current_time < run_time:
         
         time_to_f = get_time_to('f', f, k, M, n) # next reaction time
         time_to_n = get_time_to('n', f, k, M, n)
-        t_measure = delta_t # next time for measurement
         
         times_array = np.array([time_to_f, time_to_n, t_measure])
     
@@ -89,6 +91,7 @@ def run_test(f, args):
     
             n -= b
             n_c += b*n_r
+            n_history.append([n, current_time])
             
             if v_membrane >= vth:
                 v_membrane = 0
@@ -97,6 +100,7 @@ def run_test(f, args):
                 n_bursts = 0
             
             current_time += t_min
+            t_measure -= t_min
             
         elif arg_type == 'n':
             
@@ -104,6 +108,7 @@ def run_test(f, args):
             n_c = get_n_c(t_min, lam, n_c)
             
             n += 1
+            n_history.append([n, current_time])
             
             if v_membrane >= vth:
                 v_membrane = 0
@@ -112,6 +117,7 @@ def run_test(f, args):
                 n_bursts = 0
 
             current_time += t_min
+            t_measure -= t_min
             
         else:
     
@@ -128,6 +134,7 @@ def run_test(f, args):
             n_c_history.append([n_c, current_time])
     
             current_time += t_min
+            t_measure = delta_t
             
     n_history = np.array(n_history)
     n_c_history = np.array(n_c_history)
@@ -148,18 +155,27 @@ def run_test(f, args):
             'n_bursts_list':np.array(n_bursts_list),
             'mean_inter_AP_time':mean_inter_AP_time, 
             'CV':CV}
+###############################################################################
+#
+#                               Main Code
+#
+###############################################################################
 
-run_time = 10
+# Test 1
+
+run_time = 1
 
 # Rates (#/s)
 AP_freq =  50 # AP/s
-k = 10 # Refill/s (n |--> n+1)
-mu = 0.001 # neuro-transmitter voltage coefficient (volts/1 NT),  
-tau_v = 1 # voltage decay rate
-lam = 10 # nt decay rate, high means NT decays so fast that it barely adds voltage
-M = 1
+k = 20 # Refill/s (n |--> n+1)
+
+tau_v = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
+lam = 100 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
+
+mu = 0.000001 # neuro-transmitter voltage coefficient (volts/1 NT)
+n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r] below
+M = 100 # number of docking sites, from source [M] below, says 200 but at rest only 100
 pr = 0.3
-n_r = 10 # number of neurotransmitters released per AP
 vth = 0.2
 delta_t = 0.01
 
@@ -176,25 +192,51 @@ v_history = results['v_history']
 n_bursts_list = results['n_bursts_list']
 mean_inter_AP_time = results['mean_inter_AP_time']
 n_c_history = results['n_c_history']
+n_history = results['n_history']
+AP_times = results['AP_times']
 
-plt.plot(v_history[:, 1], v_history[:, 0])
-plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
-plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
+# =============================================================================
+# plt.plot(v_history[:, 1], v_history[:, 0])
+# plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+# plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+# plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
+#                                 AP_freq, k, M, pr, vth, n_r))
+# plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+# plt.plot([], [], ' ', label = '---------------------------------------')
+# plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+# plt.legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k')
+# plt.ylabel('Membrane voltage')
+# plt.xlabel('Time')
+# plt.show()
+# =============================================================================
+
+fig, ax = plt.subplots(2,2)
+ax[0,0].plot(v_history[:, 1], v_history[:, 0])
+ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
+ax[1,0].plot(n_history[:, 1], n_history[:, 0])
+
+ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
                                 AP_freq, k, M, pr, vth, n_r))
-plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
-plt.plot([], [], ' ', label = '---------------------------------------')
-plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
-plt.legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k')
-plt.ylabel('Membrane voltage')
-plt.xlabel('Time')
+ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+ax[1,1].plot([], [], ' ', label = '---------------------------------------')
+ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+
 plt.show()
 
 # =============================================================================
 # plt.figure()
 # plt.plot(n_c_history[:, 1], n_c_history[:, 0])
 # plt.show()
+# 
+# plt.figure()
+# plt.plot(n_history[:, 1], n_history[:, 0])
+# plt.show()
 # =============================================================================
+
+# Test 2
 
 # =============================================================================
 # f_list = range(20, 101)
@@ -226,4 +268,17 @@ plt.show()
 # 
 # plt.show()
 # =============================================================================
+
+
+###############################################################################
+#
+#                               Sources
+#
+###############################################################################
+
+# [n_r] The number of neurotransmitters per vesicle is 1e4, from:
+# https://www.ncbi.nlm.nih.gov/books/NBK10866/
+
+# [M]
+#https://www.cell.com/current-biology/pdf/S0960-9822(04)00223-4.pdf
 
