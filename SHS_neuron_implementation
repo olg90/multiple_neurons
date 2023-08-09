@@ -99,7 +99,7 @@ def run_test(f, args):
             
             v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
             n_c = get_n_c(t_min, lam, n_c)
-    
+            
             if test_type == 'p_r':
                 p_r_hill = hill_function(n_c, p_r, n_c_star, H_n_c)
             else:
@@ -195,7 +195,7 @@ run_time = 1
 AP_freq =  50 # AP/s
 k = 10 # Refill/s (n |--> n+1)
 M = 200 # number of docking sites, from source [M] below, says 200 but at rest only 100
-p_r = 1 # 0.3
+p_r = 0.3 # 0.3
 
 tau_v = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
 lam = 100 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
@@ -206,7 +206,7 @@ vth = 0.2 # AP-firing voltage threshold
 
 delta_t = 0.01
 
-test_type = 'p_r', # p_r, or k
+test_type = 'p_r' # p_r, or k
 n_c_star = 1
 H_n_c = 1
 H_k = 1
@@ -245,7 +245,7 @@ k_history = results['k_history']
 # plt.show()
 # =============================================================================
 
-fig, ax = plt.subplots(4,2)
+fig, ax = plt.subplots(3,2)
 ax[0,0].plot(v_history[:, 1], v_history[:, 0])
 ax[0,0].set_title('Voltage')
 ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
