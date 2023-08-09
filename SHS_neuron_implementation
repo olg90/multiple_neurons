@@ -21,9 +21,9 @@ def get_v(t, lam, tau_v, mu, n0, v0):
 def get_n_c(t, lam, n0):
     return n0*np.exp(-lam*t)
 
-def hill(x, x_max, K, H):
+def hill_function(y, x_max, x_star, H):
     # x is n_c or k
-    return x_max / (1 + (x/K)**H)
+    return x_max / (1 + (y/x_star)**H)
 
 def get_arg_type(i):
     if i == 0:
@@ -45,9 +45,15 @@ def run_test(f, args):
     tau_v = args['tau_v'] # voltage decay rate
     lam = args['lam'] # nt decay rate, high means NT decays so fast that it barely adds voltage
     M = args['M']
-    pr = args['pr']
+    p_r = args['p_r']
     n_r = args['n_r'] # number of neurotransmitters released per AP
     vth = args['vth']
+    
+    n_c_star = args['n_c_star']
+    H_n_c = args['H_n_c']
+    H_k = args['H_k']
+    
+    test_type = args['test_type']
 
     delta_t = args['delta_t']
     
@@ -71,7 +77,12 @@ def run_test(f, args):
     while current_time < run_time:
         
         time_to_f = get_time_to('f', f, k, M, n) # next reaction time
-        time_to_n = get_time_to('n', f, k, M, n)
+        
+        if test_type == 'k':
+            k_hill = hill_function(n_c, k, n_c_star, H_k)
+            time_to_n = get_time_to('n', f, k_hill, M, n)
+        else:
+            time_to_n = get_time_to('n', f, k, M, n)
         
         times_array = np.array([time_to_f, time_to_n, t_measure])
     
@@ -84,28 +95,33 @@ def run_test(f, args):
             v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
             n_c = get_n_c(t_min, lam, n_c)
     
-            b = np.random.binomial(n, pr)
+            if test_type == 'p_r':
+                p_r_hill_function = hill_function(n_c, p_r, n_c_star, H_n_c)
+            else:
+                p_r_hill_function = p_r
+            
+            b = np.random.binomial(n, p_r_hill_function)
             b_history.append(b)
             n_bursts += 1
-    
+
             n -= b
             n_c += b*n_r
             n_history.append([n, current_time])
-            
+
             if v_membrane >= vth:
                 v_membrane = 0
                 AP_times.append(current_time)
                 n_bursts_list.append(n_bursts)
                 n_bursts = 0
-            
+
             current_time += t_min
             t_measure -= t_min
-            
+
         elif arg_type == 'n':
-            
+
             v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
             n_c = get_n_c(t_min, lam, n_c)
-            
+
             n += 1
             n_history.append([n, current_time])
             
@@ -142,8 +158,12 @@ def run_test(f, args):
     AP_times = np.array(AP_times)
     
     inter_AP_times = np.diff(AP_times)
-    mean_inter_AP_time = np.mean(inter_AP_times)
-    CV = np.var(inter_AP_times) / mean_inter_AP_time
+    if len(inter_AP_times) < 2:
+        mean_inter_AP_time = np.nan
+        CV = np.nan
+    else:
+        mean_inter_AP_time = np.mean(inter_AP_times)
+        CV = np.var(inter_AP_times) / mean_inter_AP_time
     
     return {'v_history': np.array(v_history),
             'n_history':np.array(n_history),
@@ -159,30 +179,37 @@ def run_test(f, args):
 #                               Main Code
 #
 ###############################################################################
-
 # Test 1
 
 run_time = 1
 
 # Rates (#/s)
 AP_freq =  50 # AP/s
-k = 30 # Refill/s (n |--> n+1)
+k = 10 # Refill/s (n |--> n+1)
+M = 200 # number of docking sites, from source [M] below, says 200 but at rest only 100
+p_r = 0.3
 
 tau_v = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
 lam = 100 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
 
 mu = 0.000001 # neuro-transmitter voltage coefficient (volts/1 NT)
 n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r] below
-M = 200 # number of docking sites, from source [M] below, says 200 but at rest only 100
-pr = 0.3
-vth = 0.2
+vth = 0.2 # AP-firing voltage threshold
+
 delta_t = 0.01
+
+test_type = 'p_r', # p_r, or k
+n_c_star = 1
+H_n_c = 1
+H_k = 1
 
 if lam*tau_v == 1:
     raise Exception('Error: lam*tau_v == 1')
     
-args = to_dict(k = k, mu = mu, lam = lam, M = M, pr = pr, n_r = n_r, vth = vth,
-               tau_v = tau_v, delta_t = delta_t, run_time = run_time)
+args = to_dict(k = k, mu = mu, lam = lam, M = M, p_r = p_r, n_r = n_r, vth = vth,
+               tau_v = tau_v, delta_t = delta_t, run_time = run_time, 
+               n_c_star = n_c_star, H_n_c = H_n_c, H_k = H_k,
+               test_type = test_type)
 
 results = run_test(AP_freq, args)
 
@@ -197,8 +224,8 @@ AP_times = results['AP_times']
 # plt.plot(v_history[:, 1], v_history[:, 0])
 # plt.plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
 # plt.plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-# plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
-#                                 AP_freq, k, M, pr, vth, n_r))
+# plt.plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
+#                                 AP_freq, k, M, p_r, vth, n_r))
 # plt.plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
 # plt.plot([], [], ' ', label = '---------------------------------------')
 # plt.plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
@@ -218,8 +245,8 @@ ax[1,0].plot(n_history[:, 1], n_history[:, 0])
 ax[1,0].set_title('n vesicles')
 ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
 ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
-                                AP_freq, k, M, pr, vth, n_r))
+ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
+                                AP_freq, k, M, p_r, vth, n_r))
 ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
 ax[1,1].plot([], [], ' ', label = '---------------------------------------')
 ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
@@ -227,15 +254,8 @@ ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize 
 
 plt.show()
 
-# =============================================================================
-# plt.figure()
-# plt.plot(n_c_history[:, 1], n_c_history[:, 0])
-# plt.show()
-# 
-# plt.figure()
-# plt.plot(n_history[:, 1], n_history[:, 0])
-# plt.show()
-# =============================================================================
+
+
 
 # Test 2
 
