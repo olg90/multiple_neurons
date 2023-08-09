@@ -21,10 +21,9 @@ def get_v(t, lam, tau_v, mu, n0, v0):
 def get_n_c(t, lam, n0):
     return n0*np.exp(-lam*t)
 
-def hill(x, H, x_max):
+def hill(x, x_max, K, H):
     # x is n_c or k
-    x_star = 1
-    return x / (x / x_star)**H
+    return x_max / (1 + (x/K)**H)
 
 def get_arg_type(i):
     if i == 0:
@@ -62,7 +61,7 @@ def run_test(f, args):
     v_history = [[v_membrane,current_time]] # data array
     b_history = []
     AP_times = []
-    
+
     n_bursts = 0
     n_bursts_list = []
     
@@ -174,7 +173,7 @@ lam = 100 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
 
 mu = 0.000001 # neuro-transmitter voltage coefficient (volts/1 NT)
 n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r] below
-M = 100 # number of docking sites, from source [M] below, says 200 but at rest only 100
+M = 200 # number of docking sites, from source [M] below, says 200 but at rest only 100
 pr = 0.3
 vth = 0.2
 delta_t = 0.01
@@ -211,9 +210,12 @@ AP_times = results['AP_times']
 
 fig, ax = plt.subplots(2,2)
 ax[0,0].plot(v_history[:, 1], v_history[:, 0])
+ax[0,0].set_title('Voltage')
 ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
+ax[0,1].set_title('n_c')
 ax[1,0].plot(n_history[:, 1], n_history[:, 0])
 
+ax[1,0].set_title('n vesicles')
 ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
 ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
 ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \npr = {}, vth = {}, n_r = {}'.format(\
