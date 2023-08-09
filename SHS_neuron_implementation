@@ -115,6 +115,7 @@ def run_test(f, args):
             n -= b
             n_c += b*n_r
             n_history.append([n, current_time])
+            n_c_history.append([n_c, current_time])
 
             if v_membrane >= vth:
                 v_membrane = 0
@@ -129,6 +130,7 @@ def run_test(f, args):
 
             v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
             n_c = get_n_c(t_min, lam, n_c)
+            n_c_history.append([n_c, current_time])
 
             n += 1
             n_history.append([n, current_time])
