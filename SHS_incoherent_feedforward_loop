@@ -532,8 +532,11 @@ ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time,
                                                         len(preneuron_firing_history)),
                 s = 1, color = 'r')
 
-ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
 ax[0,1].set_title('v2')
+ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
+
+ax[1,1].set_title('n_c_12')
+ax[1,1].plot(n_c_12_history[:, 1], n_c_12_history[:, 0])
 
 ax[1,0].set_title('n_c_13')
 ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
