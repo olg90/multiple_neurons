@@ -54,14 +54,29 @@ def run_test(f, args):
     
     # Define parameters
     run_time = args['run_time']
-    k = args['k'] # Refill/s (n |--> n+1)
+    
+    k_13 = args['k_13'] # Refill/s (n |--> n+1)
+    k_12 = args['k_12'] # Refill/s (n |--> n+1)
+    k_23 = args['k_23'] # Refill/s (n |--> n+1)
+    
     mu = args['mu'] # nt voltage coefficient, high means nt's add a lot of voltage
-    tau_v = args['tau_v'] # voltage decay rate
+    
+    tau_v_3 = args['tau_v_3'] # voltage decay rate
+    tau_v_2 = args['tau_v_2'] # voltage decay rate
+    
     lam = args['lam'] # nt decay rate, high means NT decays so fast that it barely adds voltage
-    M = args['M']
-    p_r = args['p_r']
+    
+    M_13 = args['M_13']
+    M_12 = args['M_12']
+    M_23 = args['M_23']
+    
+    p_r_13 = args['p_r_13']
+    p_r_12 = args['p_r_12']
+    p_r_23 = args['p_r_23']
+    
     n_r = args['n_r'] # number of neurotransmitters released per AP
-    vth = args['vth']
+    vth_3 = args['vth_3']
+    vth_2 = args['vth_2']
     
     n_c_star = args['n_c_star']
     H_p_r = args['H_p_r']
@@ -72,13 +87,21 @@ def run_test(f, args):
     delta_t = args['delta_t']
     
     current_time = 0
-    v_membrane = 0
-    n_c = 0
-    n = 0
+    v3_membrane = 0
+    v2_membrane = 0
+    
+    n_13 = 0
+    n_12 = 0
+    n_23 = 0
+    
+    n_c_13 = 0
+    n_c_12 = 0
+    n_c_23 = 0
     
     n_13_history = [[n_13, current_time]]
     n_12_history = [[n_12, current_time]]
     n_23_history = [[n_23, current_time]]
+    
     n_c_13_history = [[n_c_13, current_time]]
     n_c_12_history = [[n_c_12, current_time]]
     n_c_23_history = [[n_c_23, current_time]]
@@ -90,21 +113,22 @@ def run_test(f, args):
     b_12_history = []
     b_23_history = []
     
-    AP_3_times = []
-    AP_2_times = []
+    AP_times_3 = []
+    AP_times_2 = []
     
     p_r_13_history = []
     p_r_12_history = []
+    p_r_23_history = []
     
     k_13_history = []
     k_12_history = []
     k_23_history = []
 
-    n_bursts = 0
+    n_bursts_3 = 0
+    n_bursts_2 = 0
     
-    n_bursts_13_list = []
-    n_bursts_12_list = []
-    n_bursts_23_list = []
+    n_bursts_3_list = []
+    n_bursts_2_list = []
     
     preneuron_firing_history = []
     
@@ -112,28 +136,28 @@ def run_test(f, args):
     
     while current_time < run_time:
         
-        time_to_f = get_time_to('f', f, k, M, n) # next reaction time
+        time_to_f = get_time_to('f', f, 0, 0, 0) # next reaction time
         
         if 'k_13' in test_types:
             k_13_hill = hill_function(n_c_13, k_13, n_c_star, H_k)
-            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n)
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n_13)
         else:
             k_13_hill = k_13
-            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n)      
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n_13)      
             
         if 'k_12' in test_types:
             k_12_hill = hill_function(n_c_12, k_12, n_c_star, H_k)
-            time_to_n_12 = get_time_to('n', f, k_12_hill, M, n)
+            time_to_n_12 = get_time_to('n', f, k_12_hill, M, n_12)
         else:
             k_12_hill = k_12
-            time_to_n_13 = get_time_to('n', f, k_12_hill, M, n)    
+            time_to_n_13 = get_time_to('n', f, k_12_hill, M, n_12)    
             
         if 'k_23' in test_types:
             k_23_hill = hill_function(n_c_23, k_23, n_c_star, H_k)
-            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n)
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n_23)
         else:
             k_23_hill = k_23
-            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n)     
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n_23)     
 
         k_13_history.append([k_13_hill, current_time])
         k_12_history.append([k_12_hill, current_time])
@@ -147,32 +171,68 @@ def run_test(f, args):
         t_min = times_array[t_min_arg]
     
         if arg_type == 'f':
+            
             preneuron_firing_history.append(current_time)
             
-            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-            n_c = get_n_c(t_min, lam, n_c)
+            v3_membrane = get_v3(t_min, lam, tau_v_3, v3_membrane, n_c_13, n_c_23, mu)
+            v2_membrane = get_v2(t_min, lam, tau_v_2, v2_membrane, n_c_12, mu)
             
-            if test_type == 'p_r':
-                p_r_hill = hill_function(n_c, p_r, n_c_star, H_p_r)
+            n_c_13 = get_n_c(t_min, lam, n_c_13)
+            n_c_12 = get_n_c(t_min, lam, n_c_12)
+            n_c_23 = get_n_c(t_min, lam, n_c_23)
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
             else:
-                p_r_hill = p_r
+                p_r_13_hill = p_r_13
                 
-            p_r_history.append([p_r_hill, current_time])
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23
+                
+            p_r_13_history.append([p_r_13_hill, current_time])
+            p_r_12_history.append([p_r_12_hill, current_time])
+            p_r_23_history.append([p_r_23_hill, current_time])
+                
+            b_13 = np.random.binomial(n_13, p_r_13_hill)
+            b_12 = np.random.binomial(n_12, p_r_12_hill)
             
-            b = np.random.binomial(n, p_r_hill)
-            b_history.append([b, current_time])
-            n_bursts += 1
+            b_13_history.append([b_13, current_time])
+            b_12_history.append([b_12, current_time])
+            
+            n_bursts_3 += 1
 
-            n -= b
-            n_c += b*n_r
-            n_history.append([n, current_time])
-            n_c_history.append([n_c, current_time])
+            n_13 -= b_13
+            n_12 -= b_12
+            
+            n_c_13 += b_13*n_r
+            n_c_12 += b_12*n_r
+            
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])
+            
+            n_c_13_history.append([n_c_13, current_time])
+            n_c_12_history.append([n_c_12, current_time])
 
-            if v_membrane >= vth:
-                v_membrane = 0
-                AP_times.append(current_time)
-                n_bursts_list.append(n_bursts)
-                n_bursts = 0
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_2 = 0
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
 
             current_time += t_min
             t_measure -= t_min
