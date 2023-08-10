@@ -150,7 +150,7 @@ def run_test(f, args):
             time_to_n_12 = get_time_to('n', f, k_12_hill, M_12, n_12)
         else:
             k_12_hill = k_12
-            time_to_n_13 = get_time_to('n', f, k_12_hill, M_12, n_12)    
+            time_to_n_12 = get_time_to('n', f, k_12_hill, M_12, n_12)    
             
         if 'k_23' in test_types:
             k_23_hill = hill_function(n_c_23, k_23, n_c_star, H_k)
@@ -441,31 +441,45 @@ run_time = 60
 
 # Rates (#/s)
 AP_freq =  50 # AP/s
-k = 20 # Refill/s (n |--> n+1)
-M = 100 # number of docking sites, from source [M] below, says 200 but at rest only 100
-p_r = 0.3 # 0.3
+k_13 = 20 # Refill/s (n |--> n+1)
+k_12 = 20
+k_23 = 20
+M_13 = 100 # number of docking sites, from source [M] below, says 200 but at rest only 100
+M_12 = 100
+M_23 = 100
+p_r_13 = 0.3 # 0.3
+p_r_12 = 0.3
+p_r_23 = 0.3
 
-tau_v = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
+tau_v_3 = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
+tau_v_2 = 1
 lam = 20 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
 
 mu = 0.000001 # neuro-transmitter voltage coefficient (volts/1 NT)
 n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r] below
-vth = 0.2 # AP-firing voltage threshold
+vth_3 = 0.2 # AP-firing voltage threshold
+vth_2 = 0.2
 
 delta_t = 0.01
 
-test_type = 'pr' # p_r, or k
+test_types = [] # p_r, or k
 n_c_star = 100000
 H_p_r = 3
 H_k = 1
 
-if lam*tau_v == 1:
-    raise Exception('Error: lam*tau_v == 1')
+if lam*tau_v_3 == 1:
+    raise Exception('Error: lam*tau_v_3 == 1')
+if lam*tau_v_2 == 1:
+    raise Exception('Error: lam*tau_v_2 == 1')
     
-args = to_dict(k = k, mu = mu, lam = lam, M = M, p_r = p_r, n_r = n_r, vth = vth,
-               tau_v = tau_v, delta_t = delta_t, run_time = run_time, 
+args = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23, mu = mu, lam = lam, 
+               M_13 = M_13, M_12 = M_12, M_23 = M_23, 
+               p_r_13 = p_r_13, p_r_12 = p_r_12, p_r_23 = p_r_23, 
+               n_r = n_r, vth_3 = vth_3, vth_2 = vth_2,
+               tau_v_3 = tau_v_3, tau_v_2 = tau_v_2,
+               delta_t = delta_t, run_time = run_time, 
                n_c_star = n_c_star, H_p_r = H_p_r, H_k = H_k,
-               test_type = test_type)
+               test_types = test_types)
 
 results = run_test(AP_freq, args)
 
