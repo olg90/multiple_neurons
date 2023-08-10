@@ -21,7 +21,7 @@ def get_v3(t, lam, tau_3, v3_init, n_c_13, n_c_23, mu):
 
 def get_v2(t, lam, tau_2, v2_init, n_c_12, mu):
     A = np.exp(-t*(lam + 1/tau_2))
-    B = ((-np.exp(-t*(lam + 1/tau_2))) + \
+    B = (-np.exp(lam*t)*v2_init + \
          (-np.exp(t/tau_2)*n_c_12*mu + \
           np.exp(lam*t)*(lam*v2_init + n_c_12*mu))*tau_2)
     C = -1 + lam*tau_2
