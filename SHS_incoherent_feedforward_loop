@@ -127,8 +127,8 @@ def run_test(f, args):
     n_bursts_3 = 0
     n_bursts_2 = 0
     
-    n_bursts_3_list = []
-    n_bursts_2_list = []
+    n_bursts_list_3 = []
+    n_bursts_list_2 = []
     
     preneuron_firing_history = []
     
@@ -140,24 +140,24 @@ def run_test(f, args):
         
         if 'k_13' in test_types:
             k_13_hill = hill_function(n_c_13, k_13, n_c_star, H_k)
-            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n_13)
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M_13, n_13)
         else:
             k_13_hill = k_13
-            time_to_n_13 = get_time_to('n', f, k_13_hill, M, n_13)      
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M_13, n_13)      
             
         if 'k_12' in test_types:
             k_12_hill = hill_function(n_c_12, k_12, n_c_star, H_k)
-            time_to_n_12 = get_time_to('n', f, k_12_hill, M, n_12)
+            time_to_n_12 = get_time_to('n', f, k_12_hill, M_12, n_12)
         else:
             k_12_hill = k_12
-            time_to_n_13 = get_time_to('n', f, k_12_hill, M, n_12)    
+            time_to_n_13 = get_time_to('n', f, k_12_hill, M_12, n_12)    
             
         if 'k_23' in test_types:
             k_23_hill = hill_function(n_c_23, k_23, n_c_star, H_k)
-            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n_23)
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M_23, n_23)
         else:
             k_23_hill = k_23
-            time_to_n_23 = get_time_to('n', f, k_23_hill, M, n_23)     
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M_23, n_23)     
 
         k_13_history.append([k_13_hill, current_time])
         k_12_history.append([k_12_hill, current_time])
@@ -217,13 +217,13 @@ def run_test(f, args):
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
-                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_list_3.append(n_bursts_3)
                 n_bursts_3 = 0
                 
             if v2_membrane >= vth_2:
                 v2_membrane = 0
                 AP_times_2.append(current_time)
-                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_list_2.append(n_bursts_2)
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
@@ -249,13 +249,13 @@ def run_test(f, args):
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
-                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_list_3.append(n_bursts_3)
                 n_bursts_3 = 0
                 
             if v2_membrane >= vth_2:
                 v2_membrane = 0
                 AP_times_2.append(current_time)
-                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_list_2.append(n_bursts_2)
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
@@ -281,13 +281,13 @@ def run_test(f, args):
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
-                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_list_3.append(n_bursts_3)
                 n_bursts_3 = 0
                 
             if v2_membrane >= vth_2:
                 v2_membrane = 0
                 AP_times_2.append(current_time)
-                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_list_2.append(n_bursts_2)
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
@@ -313,13 +313,13 @@ def run_test(f, args):
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
-                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_list_3.append(n_bursts_3)
                 n_bursts_3 = 0
                 
             if v2_membrane >= vth_2:
                 v2_membrane = 0
                 AP_times_2.append(current_time)
-                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_list_2.append(n_bursts_2)
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
@@ -339,18 +339,16 @@ def run_test(f, args):
             n_c_12 = get_n_c(t_min, lam, n_c_12)
             n_c_23 = get_n_c(t_min, lam, n_c_23)
             
-
-            
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
-                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_list_3.append(n_bursts_3)
                 n_bursts_3 = 0
                 
             if v2_membrane >= vth_2:
                 v2_membrane = 0
                 AP_times_2.append(current_time)
-                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_list_2.append(n_bursts_2)
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
@@ -368,31 +366,70 @@ def run_test(f, args):
             current_time += t_min
             t_measure = delta_t
             
-    n_history = np.array(n_history)
-    n_c_history = np.array(n_c_history)
-    v_history = np.array(v_history) # data array
-    b_history = np.array(b_history)
-    AP_times = np.array(AP_times)
+    n_13_history = np.array(n_13_history)
+    n_12_history = np.array(n_12_history)
+    n_23_history = np.array(n_23_history)
     
-    inter_AP_times = np.diff(AP_times)
-    if len(inter_AP_times) < 2:
-        mean_inter_AP_time = np.nan
-        CV = np.nan
+    n_c_13_history = np.array(n_c_13_history)
+    n_c_12_history = np.array(n_c_12_history)
+    n_c_23_history = np.array(n_c_23_history)
+    
+    v3_history = np.array(v3_history) # data array
+    v2_history = np.array(v2_history) # data array
+    
+    b_13_history = np.array(b_13_history)
+    b_12_history = np.array(b_12_history)
+    b_23_history = np.array(b_23_history)
+    
+    AP_times_3 = np.array(AP_times_3)
+    AP_times_2 = np.array(AP_times_2)
+    
+    inter_AP_times_3 = np.diff(AP_times_3)
+    inter_AP_times_2 = np.diff(AP_times_2)
+    
+    if len(inter_AP_times_3) < 2:
+        mean_inter_AP_time_3 = np.nan
+        CV_3 = np.nan
     else:
-        mean_inter_AP_time = np.mean(inter_AP_times)
-        CV = np.var(inter_AP_times) / mean_inter_AP_time
+        mean_inter_AP_time_3 = np.mean(inter_AP_times_3)
+        CV_3 = np.var(inter_AP_times_3) / mean_inter_AP_time_3
+        
+    if len(inter_AP_times_2) < 2:
+        mean_inter_AP_time_2 = np.nan
+        CV_2 = np.nan
+    else:
+        mean_inter_AP_time_2 = np.mean(inter_AP_times_2)
+        CV_2 = np.var(inter_AP_times_2) / mean_inter_AP_time_2
     
-    return {'v_history': np.array(v_history),
-            'n_history':np.array(n_history),
-            'n_c_history':np.array(n_c_history),
-            'b_history':np.array(b_history),
-            'AP_times':np.array(AP_times),
-            'inter_AP_times':np.array(inter_AP_times),
-            'n_bursts_list':np.array(n_bursts_list),
-            'mean_inter_AP_time':mean_inter_AP_time, 
-            'CV':np.array(CV), 'k_history':np.array(k_history), 
-            'p_r_history':np.array(p_r_history),
+    return {'v3_history': np.array(v3_history),
+            'v2_history': np.array(v2_history),
+            'n_13_history':np.array(n_13_history),
+            'n_12_history':np.array(n_12_history),
+            'n_23_history':np.array(n_23_history),
+            'n_c_13_history':np.array(n_c_13_history),
+            'n_c_12_history':np.array(n_c_12_history),
+            'n_c_23_history':np.array(n_c_23_history),
+            'b_13_history':np.array(b_13_history),
+            'b_12_history':np.array(b_12_history),
+            'b_23_history':np.array(b_23_history),
+            'AP_times_3':np.array(AP_times_3),
+            'AP_times_2':np.array(AP_times_2),
+            'inter_AP_times_3':np.array(inter_AP_times_3),
+            'inter_AP_times_2':np.array(inter_AP_times_2),
+            'n_bursts_list_3':np.array(n_bursts_list_3),
+            'n_bursts_list_2':np.array(n_bursts_list_2),
+            'mean_inter_AP_time_3':mean_inter_AP_time_3, 
+            'mean_inter_AP_time_2':mean_inter_AP_time_2, 
+            'CV_3':np.array(CV_3), 
+            'CV_2':np.array(CV_2), 
+            'k_13_history':np.array(k_13_history), 
+            'k_12_history':np.array(k_12_history), 
+            'k_23_history':np.array(k_23_history), 
+            'p_r_13_history':np.array(p_r_13_history),
+            'p_r_12_history':np.array(p_r_12_history),
+            'p_r_23_history':np.array(p_r_23_history),
             'preneuron_firing_history':preneuron_firing_history}
+
 ###############################################################################
 #
 #                               Main Code
