@@ -483,16 +483,31 @@ args = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23, mu = mu, lam = lam,
 
 results = run_test(AP_freq, args)
 
-v_history = results['v_history']
-n_bursts_list = results['n_bursts_list']
-mean_inter_AP_time = results['mean_inter_AP_time']
-n_c_history = results['n_c_history']
-n_history = results['n_history']
-AP_times = results['AP_times']
-p_r_history = results['p_r_history']
-k_history = results['k_history']
+v3_history = results['v3_history']
+v2_history = results['v2_history']
+n_bursts_list_3 = results['n_bursts_list_3']
+n_bursts_list_2= results['n_bursts_list_2']
+mean_inter_AP_time_3 = results['mean_inter_AP_time_3']
+mean_inter_AP_time_2 = results['mean_inter_AP_time_2']
+n_c_13_history = results['n_c_history_13']
+n_c_12_history = results['n_c_history_12']
+n_c_23_history = results['n_c_history_23']
+n_13_history = results['n_13_history']
+n_12_history = results['n_12_history']
+n_23_history = results['n_23_history']
+AP_times_3 = results['AP_times_3']
+AP_times_2 = results['AP_times_2']
+p_r_13_history = results['p_r_13_history']
+p_r_12_history = results['p_r_12_history']
+p_r_23_history = results['p_r_23_history']
+k_13_history = results['k_13_history']
+k_12_history = results['k_12_history']
+k_23_history = results['k_23_history']
+b_13_history = results['b_13_history']
+b_12_history = results['b_12_history']
+b_23_history = results['b_23_history']
 preneuron_firing_history = results['preneuron_firing_history']
-b_history = results['b_history']
+
 
 # =============================================================================
 # plt.plot(v_history[:, 1], v_history[:, 0])
