@@ -524,35 +524,40 @@ preneuron_firing_history = results['preneuron_firing_history']
 # plt.show()
 # =============================================================================
 
-fig, ax = plt.subplots(3,2)
+fig, ax = plt.subplots(4,2)
 
 ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
-ax[0,0].set_title('Voltage')
+ax[0,0].set_title('v3')
 ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
                                                         len(preneuron_firing_history)),
                 s = 1, color = 'r')
 
-ax[0,1].set_title('n_c')
-ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
+ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
+ax[0,1].set_title('v2')
 
-ax[1,0].set_title('n vesicles')
-ax[1,0].plot(n_history[:, 1], n_history[:, 0])
+ax[1,0].set_title('n_c_13')
+ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
 
-ax[1,1].plot(b_history[:, 1], b_history[:, 0])
-ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
-ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
-                                AP_freq, k, M, p_r, vth, n_r))
-ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
-ax[1,1].plot([], [], ' ', label = '---------------------------------------')
-ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
-ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
-ax[1,1].set_title('b')
+ax[2,0].set_title('n vesicles')
+ax[2,0].plot(n_13_history[:, 1], n_13_history[:, 0])
 
-ax[2,0].plot(k_history[:, 1], k_history[:, 0])
-ax[2,0].set_title('k')
-ax[2,1].plot(p_r_history[:, 1], p_r_history[:, 0])
-ax[2,1].set_title('p_r')
+# =============================================================================
+# ax[1,1].plot(b_history[:, 1], b_history[:, 0])
+# ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+# ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+# ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
+#                                 AP_freq, k, M, p_r, vth, n_r))
+# ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+# ax[1,1].plot([], [], ' ', label = '---------------------------------------')
+# ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+# ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+# ax[1,1].set_title('b')
+# 
+# ax[2,0].plot(k_history[:, 1], k_history[:, 0])
+# ax[2,0].set_title('k')
+# ax[2,1].plot(p_r_history[:, 1], p_r_history[:, 0])
+# ax[2,1].set_title('p_r')
+# =============================================================================
 plt.show()
 
 # Test 2
