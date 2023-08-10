@@ -214,12 +214,6 @@ def run_test(f, args):
             n_c_13 += b_13*n_r
             n_c_12 += b_12*n_r
             
-            n_13_history.append([n_13, current_time])
-            n_12_history.append([n_12, current_time])
-            
-            n_c_13_history.append([n_c_13, current_time])
-            n_c_12_history.append([n_c_12, current_time])
-
             if v3_membrane >= vth_3:
                 v3_membrane = 0
                 AP_times_3.append(current_time)
@@ -235,77 +229,141 @@ def run_test(f, args):
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
+                n_c_23_history.append([n_c_23, current_time])
 
             current_time += t_min
             t_measure -= t_min
 
         elif arg_type == 'n13':
-
-            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-            n_c = get_n_c(t_min, lam, n_c)
-            n_c_history.append([n_c, current_time])
-
-            n += 1
-            n_history.append([n, current_time])
             
-            if v_membrane >= vth:
-                v_membrane = 0
-                AP_times.append(current_time)
-                n_bursts_list.append(n_bursts)
-                n_bursts = 0
+            v3_membrane = get_v3(t_min, lam, tau_v_3, v3_membrane, n_c_13, n_c_23, mu)
+            v2_membrane = get_v2(t_min, lam, tau_v_2, v2_membrane, n_c_12, mu)
+            
+            n_c_13 = get_n_c(t_min, lam, n_c_13)
+            n_c_12 = get_n_c(t_min, lam, n_c_12)
+            n_c_23 = get_n_c(t_min, lam, n_c_23)
+            
+            n_13 += 1
+            n_13_history.append([n_13, current_time])
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_2 = 0
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                n_23 -= b_23
+                n_c_23 += n_r*b_23
+                n_c_23_history.append([n_c_23, current_time])
 
             current_time += t_min
             t_measure -= t_min
 
         elif arg_type == 'n12':
 
-            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-            n_c = get_n_c(t_min, lam, n_c)
-            n_c_history.append([n_c, current_time])
-
-            n += 1
-            n_history.append([n, current_time])
+            v3_membrane = get_v3(t_min, lam, tau_v_3, v3_membrane, n_c_13, n_c_23, mu)
+            v2_membrane = get_v2(t_min, lam, tau_v_2, v2_membrane, n_c_12, mu)
             
-            if v_membrane >= vth:
-                v_membrane = 0
-                AP_times.append(current_time)
-                n_bursts_list.append(n_bursts)
-                n_bursts = 0
+            n_c_13 = get_n_c(t_min, lam, n_c_13)
+            n_c_12 = get_n_c(t_min, lam, n_c_12)
+            n_c_23 = get_n_c(t_min, lam, n_c_23)
+            
+            n_12 += 1
+            n_12_history.append([n_12, current_time])
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_2 = 0
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                n_23 -= b_23
+                n_c_23 += n_r*b_23
+                n_c_23_history.append([n_c_23, current_time])
 
             current_time += t_min
             t_measure -= t_min
             
         elif arg_type == 'n23':
 
-            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-            n_c = get_n_c(t_min, lam, n_c)
-            n_c_history.append([n_c, current_time])
-
-            n += 1
-            n_history.append([n, current_time])
+            v3_membrane = get_v3(t_min, lam, tau_v_3, v3_membrane, n_c_13, n_c_23, mu)
+            v2_membrane = get_v2(t_min, lam, tau_v_2, v2_membrane, n_c_12, mu)
             
-            if v_membrane >= vth:
-                v_membrane = 0
-                AP_times.append(current_time)
-                n_bursts_list.append(n_bursts)
-                n_bursts = 0
+            n_c_13 = get_n_c(t_min, lam, n_c_13)
+            n_c_12 = get_n_c(t_min, lam, n_c_12)
+            n_c_23 = get_n_c(t_min, lam, n_c_23)
+            
+            n_23 += 1
+            n_23_history.append([n_23, current_time])
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_2 = 0
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                n_23 -= b_23
+                n_c_23 += n_r*b_23
+                n_c_23_history.append([n_c_23, current_time])
 
             current_time += t_min
             t_measure -= t_min
             
         else:
-    
-            v_membrane = get_v(t_min, lam, tau_v, mu, n_c, v_membrane)
-            n_c = get_n_c(t_min, lam, n_c)
             
-            if v_membrane >= vth:
-                v_membrane = 0       
-                AP_times.append(current_time)
-                n_bursts_list.append(n_bursts)
-                n_bursts = 0
+            v3_membrane = get_v3(t_min, lam, tau_v_3, v3_membrane, n_c_13, n_c_23, mu)
+            v2_membrane = get_v2(t_min, lam, tau_v_2, v2_membrane, n_c_12, mu)
+            
+            n_c_13 = get_n_c(t_min, lam, n_c_13)
+            n_c_12 = get_n_c(t_min, lam, n_c_12)
+            n_c_23 = get_n_c(t_min, lam, n_c_23)
+            
+
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_3_list.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_2_list.append(n_bursts_2)
+                n_bursts_2 = 0
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                n_23 -= b_23
+                n_c_23 += n_r*b_23
+                n_c_23_history.append([n_c_23, current_time])
     
-            v_history.append([v_membrane, current_time])
-            n_c_history.append([n_c, current_time])
+            v3_history.append([v3_membrane, current_time])
+            v2_history.append([v2_membrane, current_time])
+            
+            n_c_13_history.append([n_c_13, current_time])
+            n_c_12_history.append([n_c_12, current_time])
+            n_c_23_history.append([n_c_23, current_time])
             
             current_time += t_min
             t_measure = delta_t
