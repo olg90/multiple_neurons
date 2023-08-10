@@ -437,7 +437,7 @@ def run_test(f, args):
 ###############################################################################
 # Test 1
 
-run_time = 60
+run_time = 1
 
 # Rates (#/s)
 AP_freq =  50 # AP/s
@@ -489,9 +489,9 @@ n_bursts_list_3 = results['n_bursts_list_3']
 n_bursts_list_2= results['n_bursts_list_2']
 mean_inter_AP_time_3 = results['mean_inter_AP_time_3']
 mean_inter_AP_time_2 = results['mean_inter_AP_time_2']
-n_c_13_history = results['n_c_history_13']
-n_c_12_history = results['n_c_history_12']
-n_c_23_history = results['n_c_history_23']
+n_c_13_history = results['n_c_13_history']
+n_c_12_history = results['n_c_12_history']
+n_c_23_history = results['n_c_23_history']
 n_13_history = results['n_13_history']
 n_12_history = results['n_12_history']
 n_23_history = results['n_23_history']
@@ -524,69 +524,69 @@ preneuron_firing_history = results['preneuron_firing_history']
 # plt.show()
 # =============================================================================
 
-# =============================================================================
-# fig, ax = plt.subplots(3,2)
-# 
-# ax[0,0].plot(v_history[:, 1], v_history[:, 0])
-# ax[0,0].set_title('Voltage')
-# ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
-#                                                         len(preneuron_firing_history)),
-#                 s = 1, color = 'r')
-# 
-# ax[0,1].set_title('n_c')
-# ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
-# 
-# ax[1,0].set_title('n vesicles')
-# ax[1,0].plot(n_history[:, 1], n_history[:, 0])
-# 
-# ax[1,1].plot(b_history[:, 1], b_history[:, 0])
-# ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
-# ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
-# ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
-#                                 AP_freq, k, M, p_r, vth, n_r))
-# ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
-# ax[1,1].plot([], [], ' ', label = '---------------------------------------')
-# ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
-# ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
-# ax[1,1].set_title('b')
-# 
-# ax[2,0].plot(k_history[:, 1], k_history[:, 0])
-# ax[2,0].set_title('k')
-# ax[2,1].plot(p_r_history[:, 1], p_r_history[:, 0])
-# ax[2,1].set_title('p_r')
-# plt.show()
-# =============================================================================
+fig, ax = plt.subplots(3,2)
+
+ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
+ax[0,0].set_title('Voltage')
+ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
+                                                        len(preneuron_firing_history)),
+                s = 1, color = 'r')
+
+ax[0,1].set_title('n_c')
+ax[0,1].plot(n_c_history[:, 1], n_c_history[:, 0])
+
+ax[1,0].set_title('n vesicles')
+ax[1,0].plot(n_history[:, 1], n_history[:, 0])
+
+ax[1,1].plot(b_history[:, 1], b_history[:, 0])
+ax[1,1].plot([], [], ' ', label = 'Mean num bursts = {}'.format(np.around(np.mean(n_bursts_list), 3)))
+ax[1,1].plot([], [], ' ', label = 'Mean inter-AP time = {}'.format(np.around(mean_inter_AP_time,3)))
+ax[1,1].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
+                                AP_freq, k, M, p_r, vth, n_r))
+ax[1,1].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+ax[1,1].plot([], [], ' ', label = '---------------------------------------')
+ax[1,1].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+ax[1,1].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+ax[1,1].set_title('b')
+
+ax[2,0].plot(k_history[:, 1], k_history[:, 0])
+ax[2,0].set_title('k')
+ax[2,1].plot(p_r_history[:, 1], p_r_history[:, 0])
+ax[2,1].set_title('p_r')
+plt.show()
 
 # Test 2
 
-f_list = range(20, 101)
-post_synaptic_mean_AP_freq_list = []
-CV_list = []
-n_bursts_mean_list = []
-for f in f_list:
-    print(f)
-    results = run_test(f, args)
-    post_synaptic_mean_AP_freq_list.append(1./results['mean_inter_AP_time'])
-    CV_list.append(results['CV'])
-    n_bursts_mean_list.append(np.mean(results['n_bursts_list']))
-    
 # =============================================================================
-# plt.figure()
-# plt.plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
-# plt.plot(f_list, CV_list, label = 'CV')
+# f_list = range(20, 101)
+# post_synaptic_mean_AP_freq_list = []
+# CV_list = []
+# n_bursts_mean_list = []
+# for f in f_list:
+#     print(f)
+#     results = run_test(f, args)
+#     post_synaptic_mean_AP_freq_list.append(1./results['mean_inter_AP_time'])
+#     CV_list.append(results['CV'])
+#     n_bursts_mean_list.append(np.mean(results['n_bursts_list']))
+#     
+# # =============================================================================
+# # plt.figure()
+# # plt.plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
+# # plt.plot(f_list, CV_list, label = 'CV')
+# # plt.show()
+# # =============================================================================
+# 
+# fig, ax = plt.subplots(1,3)
+# ax[0].plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
+# ax[1].plot(f_list, CV_list, label = 'CV')
+# ax[2].plot(f_list, n_bursts_mean_list, label = 'Mean num. of bursts')
+# 
+# ax[0].legend()
+# ax[1].legend()
+# ax[2].legend()
+# 
 # plt.show()
 # =============================================================================
-
-fig, ax = plt.subplots(1,3)
-ax[0].plot(f_list, post_synaptic_mean_AP_freq_list, label = 'Mean frequency')
-ax[1].plot(f_list, CV_list, label = 'CV')
-ax[2].plot(f_list, n_bursts_mean_list, label = 'Mean num. of bursts')
-
-ax[0].legend()
-ax[1].legend()
-ax[2].legend()
-
-plt.show()
 
 
 ###############################################################################
