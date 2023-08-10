@@ -233,6 +233,8 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                n_23 -= b_23
+                n_c_23 += n_r*b_23
 
             current_time += t_min
             t_measure -= t_min
