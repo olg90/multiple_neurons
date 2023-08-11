@@ -449,9 +449,9 @@ AP_freq =  50 # AP/s
 k_13 = 20 # Refill/s (n |--> n+1)
 k_12 = 20
 k_23 = 20
-M_13 = 100 # number of docking sites, from source [M] below, says 200 but at rest only 100
-M_12 = 100
-M_23 = 100
+M_13 = 200 # number of docking sites, from source [M] below, says 200 but at rest only 100
+M_12 = 200
+M_23 = 200
 p_r_13 = 0.3 # 0.3
 p_r_12 = 0.3
 p_r_23 = 0.3
@@ -566,17 +566,17 @@ ax[2,2].set_title('n_23')
 ax[2,2].plot(n_23_history[:, 1], n_23_history[:, 0])
 ax[2,2].set_xlim([0,1])
 
-
+marker = 'o'
 ax[3,0].set_title('b_13')
-ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0])
+ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker)
 ax[3,0].set_xlim([0,1])
 
 ax[3,1].set_title('b_12')
-ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0])
+ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker)
 ax[3,1].set_xlim([0,1])
 
 ax[3,2].set_title('b_23')
-ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0])
+ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker)
 ax[3,2].set_xlim([0,1])
 
 
