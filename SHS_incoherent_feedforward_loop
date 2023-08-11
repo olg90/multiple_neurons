@@ -677,13 +677,17 @@ args_open = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23,
 # =============================================================================
 # ------------------------------ Test 2
 f_list = range(1, 101)
-n3_mean_AP_freq_list = []
-CV_list_3 = []
-n3_bursts_mean_list = []
+n3_mean_AP_freq_list_IFL = []
+CV_list_3_IFL = []
+n3_bursts_mean_list_IFL = []
 
-n2_mean_AP_freq_list = []
-CV_list_2 = []
-n2_bursts_mean_list = []
+n2_mean_AP_freq_list_IFL = []
+CV_list_2_IFL = []
+n2_bursts_mean_list_IFL = []
+
+n3_mean_AP_freq_list_open = []
+CV_list_3_open = []
+n3_bursts_mean_list_open = []
 
 for f in f_list:
     
@@ -692,33 +696,36 @@ for f in f_list:
     results_IFL = run_test(f, args_IFL)
     results_open = run_test(f, args_open)
     
-    # IFL - NEEDS EDIT
-    n3_mean_AP_freq_list.append(1./results['mean_inter_AP_time_3'])
-    CV_list_3.append(results['CV_3'])
-    n3_bursts_mean_list.append(np.mean(results['n_bursts_list_3']))
-
-    n2_mean_AP_freq_list.append(1./results['mean_inter_AP_time_2'])
-    CV_list_2.append(results['CV_2'])
-    n2_bursts_mean_list.append(np.mean(results['n_bursts_list_2']))
+    # IFL
     
-    # Open - NEEDS EDIT
+    n3_mean_AP_freq_list_IFL.append(1./results_IFL['mean_inter_AP_time_3'])
+    CV_list_3_IFL.append(results_IFL['CV_3'])
+    n3_bursts_mean_list_IFL.append(np.mean(results_IFL['n_bursts_list_3']))
+
+    n2_mean_AP_freq_list_IFL.append(1./results_IFL['mean_inter_AP_time_2'])
+    CV_list_2_IFL.append(results_IFL['CV_2'])
+    n2_bursts_mean_list_IFL.append(np.mean(results_IFL['n_bursts_list_2']))
     
-    n3_mean_AP_freq_list.append(1./results['mean_inter_AP_time_3'])
-    CV_list_3.append(results['CV_3'])
-    n3_bursts_mean_list.append(np.mean(results['n_bursts_list_3']))
+    # Open
+    
+    n3_mean_AP_freq_list_open.append(1./results_open['mean_inter_AP_time_3'])
+    CV_list_3_open.append(results_open['CV_3'])
+    n3_bursts_mean_list_open.append(np.mean(results_open['n_bursts_list_3']))
 
-    n2_mean_AP_freq_list.append(1./results['mean_inter_AP_time_2'])
-    CV_list_2.append(results['CV_2'])
-    n2_bursts_mean_list.append(np.mean(results['n_bursts_list_2']))
 
-fig, ax = plt.subplots(3,2)
-ax[0,0].plot(f_list, n3_mean_AP_freq_list, label = 'Mean frequency n3')
-ax[1,0].plot(f_list, CV_list_3, label = 'CV n3')
-ax[2,0].plot(f_list, n3_bursts_mean_list, label = 'Mean num. of bursts n3')
+fig, ax = plt.subplots(3,3)
 
-ax[0,1].plot(f_list, n2_mean_AP_freq_list, label = 'Mean frequency n2')
-ax[1,1].plot(f_list, CV_list_2, label = 'CV n2')
-ax[2,1].plot(f_list, n2_bursts_mean_list, label = 'Mean num. of bursts n2')
+ax[0,0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'Mean frequency n3')
+ax[1,0].plot(f_list, CV_list_3_IFL, label = 'CV n3')
+ax[2,0].plot(f_list, n3_bursts_mean_list_IFL, label = 'Mean num. of bursts n3')
+
+ax[0,1].plot(f_list, n2_mean_AP_freq_list_IFL, label = 'Mean frequency n2')
+ax[1,1].plot(f_list, CV_list_2_IFL, label = 'CV n2')
+ax[2,1].plot(f_list, n2_bursts_mean_list_IFL, label = 'Mean num. of bursts n2')
+
+ax[0,2].plot(f_list, n3_mean_AP_freq_list_open, label = 'Mean frequency n3')
+ax[1,2].plot(f_list, CV_list_3_open, label = 'CV n3')
+ax[2,2].plot(f_list, n3_bursts_mean_list_open, label = 'Mean num. of bursts n3')
 
 ax[0,0].legend()
 ax[1,0].legend()
@@ -727,6 +734,10 @@ ax[2,0].legend()
 ax[0,1].legend()
 ax[1,1].legend()
 ax[2,1].legend()
+
+ax[0,2].legend()
+ax[1,2].legend()
+ax[2,2].legend()
 
 plt.show()
 
