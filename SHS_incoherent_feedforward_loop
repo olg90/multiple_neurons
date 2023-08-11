@@ -576,145 +576,159 @@ args_open = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23,
                n_c_star = n_c_star, H_p_r = H_p_r, H_k = H_k,
                test_types = test_types, model = 'open')
 # -----------------------------------------------------------------------------
-results = run_test(AP_freq, args_open)
-
-v3_history = results['v3_history']
-v2_history = results['v2_history']
-n_bursts_list_3 = results['n_bursts_list_3']
-n_bursts_list_2= results['n_bursts_list_2']
-mean_inter_AP_time_3 = results['mean_inter_AP_time_3']
-mean_inter_AP_time_2 = results['mean_inter_AP_time_2']
-n_c_13_history = results['n_c_13_history']
-n_c_12_history = results['n_c_12_history']
-n_c_23_history = results['n_c_23_history']
-n_13_history = results['n_13_history']
-n_12_history = results['n_12_history']
-n_23_history = results['n_23_history']
-AP_times_3 = results['AP_times_3']
-AP_times_2 = results['AP_times_2']
-p_r_13_history = results['p_r_13_history']
-p_r_12_history = results['p_r_12_history']
-p_r_23_history = results['p_r_23_history']
-k_13_history = results['k_13_history']
-k_12_history = results['k_12_history']
-k_23_history = results['k_23_history']
-b_13_history = results['b_13_history']
-b_12_history = results['b_12_history']
-b_23_history = results['b_23_history']
-preneuron_firing_history = results['preneuron_firing_history']
-interneuron_firing_history = results['interneuron_firing_history']
-
-fig, ax = plt.subplots(4,3)
-fig.suptitle('Test types = {}'.format(test_types))
-
-ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
-ax[0,0].set_title('v3')
-ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
-                                                        len(preneuron_firing_history)),
-                s = 1, color = 'r')
-ax[0,0].scatter(interneuron_firing_history, 0*np.linspace(0,run_time, 
-                                                        len(interneuron_firing_history)),
-                s = 1, color = 'k')
-ax[0,0].set_xlim([0,run_time])
-
-ax[0,1].set_title('v2')
-ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
-ax[0,1].set_xlim([0,run_time])
-
-ax[1,0].set_title('n_c_13')
-ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
-ax[1,0].set_xlim([0,run_time])
-
-ax[1,1].set_title('n_c_12')
-ax[1,1].plot(n_c_12_history[:, 1], n_c_12_history[:, 0])
-ax[1,1].set_xlim([0,run_time])
-
-ax[1,2].set_title('n_c_23')
-ax[1,2].plot(n_c_23_history[:, 1], n_c_23_history[:, 0])
-ax[1,2].set_xlim([0,run_time])
-
-ax[2,0].set_title('n_13')
-ax[2,0].plot(n_13_history[:, 1], n_13_history[:, 0])
-ax[2,0].set_xlim([0,run_time])
-
-ax[2,1].set_title('n_12')
-ax[2,1].plot(n_12_history[:, 1], n_12_history[:, 0])
-ax[2,1].set_xlim([0,run_time])
-
-ax[2,2].set_title('n_23')
-ax[2,2].plot(n_23_history[:, 1], n_23_history[:, 0])
-ax[2,2].set_xlim([0,run_time])
-
-marker = 'o'
-markersize = 5
-markerfacecolor = 'r'
-
-ax[3,0].set_title('b_13')
-ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker, 
-             markersize = markersize, markerfacecolor = markerfacecolor)
-ax[3,0].set_xlim([0,run_time])
-
-ax[3,1].set_title('b_12')
-ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker, 
-             markersize = markersize, markerfacecolor = markerfacecolor)
-ax[3,1].set_xlim([0,run_time])
-
-ax[3,2].set_title('b_23')
-ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker, 
-             markersize = markersize, markerfacecolor = markerfacecolor)
-ax[3,2].set_xlim([0,run_time])
-
-ax[0,2].plot([], [], ' ', label = 'Mean num bursts n3 = {}'.format(np.around(np.mean(n_bursts_list_3), 3)))
-ax[0,2].plot([], [], ' ', label = 'Mean num bursts n2 = {}'.format(np.around(np.mean(n_bursts_list_2), 3)))
-ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n3 = {}'.format(np.around(mean_inter_AP_time_3,3)))
-ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n2 = {}'.format(np.around(mean_inter_AP_time_2,3)))
-ax[0,2].plot([], [], ' ', label = '---------------------------------------')
-ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 15)
-
-plt.show()
-
-# ------------------------------ Test 2
 # =============================================================================
-# f_list = range(1, 101)
-# n3_mean_AP_freq_list = []
-# CV_list_3 = []
-# n3_bursts_mean_list = []
+# results = run_test(AP_freq, args_open)
 # 
-# n2_mean_AP_freq_list = []
-# CV_list_2 = []
-# n2_bursts_mean_list = []
+# v3_history = results['v3_history']
+# v2_history = results['v2_history']
+# n_bursts_list_3 = results['n_bursts_list_3']
+# n_bursts_list_2= results['n_bursts_list_2']
+# mean_inter_AP_time_3 = results['mean_inter_AP_time_3']
+# mean_inter_AP_time_2 = results['mean_inter_AP_time_2']
+# n_c_13_history = results['n_c_13_history']
+# n_c_12_history = results['n_c_12_history']
+# n_c_23_history = results['n_c_23_history']
+# n_13_history = results['n_13_history']
+# n_12_history = results['n_12_history']
+# n_23_history = results['n_23_history']
+# AP_times_3 = results['AP_times_3']
+# AP_times_2 = results['AP_times_2']
+# p_r_13_history = results['p_r_13_history']
+# p_r_12_history = results['p_r_12_history']
+# p_r_23_history = results['p_r_23_history']
+# k_13_history = results['k_13_history']
+# k_12_history = results['k_12_history']
+# k_23_history = results['k_23_history']
+# b_13_history = results['b_13_history']
+# b_12_history = results['b_12_history']
+# b_23_history = results['b_23_history']
+# preneuron_firing_history = results['preneuron_firing_history']
+# interneuron_firing_history = results['interneuron_firing_history']
 # 
-# for f in f_list:
-#     print(f)
-#     results_IFL = run_test(f, args_IFL)
-#     results_open = run_test(f, args_open)
-#     n3_mean_AP_freq_list.append(1./results['mean_inter_AP_time_3'])
-#     CV_list_3.append(results['CV_3'])
-#     n3_bursts_mean_list.append(np.mean(results['n_bursts_list_3']))
+# fig, ax = plt.subplots(4,3)
+# fig.suptitle('Test types = {}'.format(test_types))
 # 
-#     n2_mean_AP_freq_list.append(1./results['mean_inter_AP_time_2'])
-#     CV_list_2.append(results['CV_2'])
-#     n2_bursts_mean_list.append(np.mean(results['n_bursts_list_2']))
+# ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
+# ax[0,0].set_title('v3')
+# ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
+#                                                         len(preneuron_firing_history)),
+#                 s = 1, color = 'r')
+# ax[0,0].scatter(interneuron_firing_history, 0*np.linspace(0,run_time, 
+#                                                         len(interneuron_firing_history)),
+#                 s = 1, color = 'k')
+# ax[0,0].set_xlim([0,run_time])
 # 
-# fig, ax = plt.subplots(3,2)
-# ax[0,0].plot(f_list, n3_mean_AP_freq_list, label = 'Mean frequency n3')
-# ax[1,0].plot(f_list, CV_list_3, label = 'CV n3')
-# ax[2,0].plot(f_list, n3_bursts_mean_list, label = 'Mean num. of bursts n3')
+# ax[0,1].set_title('v2')
+# ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
+# ax[0,1].set_xlim([0,run_time])
 # 
-# ax[0,1].plot(f_list, n2_mean_AP_freq_list, label = 'Mean frequency n2')
-# ax[1,1].plot(f_list, CV_list_2, label = 'CV n2')
-# ax[2,1].plot(f_list, n2_bursts_mean_list, label = 'Mean num. of bursts n2')
+# ax[1,0].set_title('n_c_13')
+# ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
+# ax[1,0].set_xlim([0,run_time])
 # 
-# ax[0,0].legend()
-# ax[1,0].legend()
-# ax[2,0].legend()
+# ax[1,1].set_title('n_c_12')
+# ax[1,1].plot(n_c_12_history[:, 1], n_c_12_history[:, 0])
+# ax[1,1].set_xlim([0,run_time])
 # 
-# ax[0,1].legend()
-# ax[1,1].legend()
-# ax[2,1].legend()
+# ax[1,2].set_title('n_c_23')
+# ax[1,2].plot(n_c_23_history[:, 1], n_c_23_history[:, 0])
+# ax[1,2].set_xlim([0,run_time])
+# 
+# ax[2,0].set_title('n_13')
+# ax[2,0].plot(n_13_history[:, 1], n_13_history[:, 0])
+# ax[2,0].set_xlim([0,run_time])
+# 
+# ax[2,1].set_title('n_12')
+# ax[2,1].plot(n_12_history[:, 1], n_12_history[:, 0])
+# ax[2,1].set_xlim([0,run_time])
+# 
+# ax[2,2].set_title('n_23')
+# ax[2,2].plot(n_23_history[:, 1], n_23_history[:, 0])
+# ax[2,2].set_xlim([0,run_time])
+# 
+# marker = 'o'
+# markersize = 5
+# markerfacecolor = 'r'
+# 
+# ax[3,0].set_title('b_13')
+# ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker, 
+#              markersize = markersize, markerfacecolor = markerfacecolor)
+# ax[3,0].set_xlim([0,run_time])
+# 
+# ax[3,1].set_title('b_12')
+# ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker, 
+#              markersize = markersize, markerfacecolor = markerfacecolor)
+# ax[3,1].set_xlim([0,run_time])
+# 
+# ax[3,2].set_title('b_23')
+# ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker, 
+#              markersize = markersize, markerfacecolor = markerfacecolor)
+# ax[3,2].set_xlim([0,run_time])
+# 
+# ax[0,2].plot([], [], ' ', label = 'Mean num bursts n3 = {}'.format(np.around(np.mean(n_bursts_list_3), 3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean num bursts n2 = {}'.format(np.around(np.mean(n_bursts_list_2), 3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n3 = {}'.format(np.around(mean_inter_AP_time_3,3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n2 = {}'.format(np.around(mean_inter_AP_time_2,3)))
+# ax[0,2].plot([], [], ' ', label = '---------------------------------------')
+# ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 15)
 # 
 # plt.show()
+# 
 # =============================================================================
+# ------------------------------ Test 2
+f_list = range(1, 101)
+n3_mean_AP_freq_list = []
+CV_list_3 = []
+n3_bursts_mean_list = []
+
+n2_mean_AP_freq_list = []
+CV_list_2 = []
+n2_bursts_mean_list = []
+
+for f in f_list:
+    
+    print(f)
+    
+    results_IFL = run_test(f, args_IFL)
+    results_open = run_test(f, args_open)
+    
+    # IFL - NEEDS EDIT
+    n3_mean_AP_freq_list.append(1./results['mean_inter_AP_time_3'])
+    CV_list_3.append(results['CV_3'])
+    n3_bursts_mean_list.append(np.mean(results['n_bursts_list_3']))
+
+    n2_mean_AP_freq_list.append(1./results['mean_inter_AP_time_2'])
+    CV_list_2.append(results['CV_2'])
+    n2_bursts_mean_list.append(np.mean(results['n_bursts_list_2']))
+    
+    # Open - NEEDS EDIT
+    
+    n3_mean_AP_freq_list.append(1./results['mean_inter_AP_time_3'])
+    CV_list_3.append(results['CV_3'])
+    n3_bursts_mean_list.append(np.mean(results['n_bursts_list_3']))
+
+    n2_mean_AP_freq_list.append(1./results['mean_inter_AP_time_2'])
+    CV_list_2.append(results['CV_2'])
+    n2_bursts_mean_list.append(np.mean(results['n_bursts_list_2']))
+
+fig, ax = plt.subplots(3,2)
+ax[0,0].plot(f_list, n3_mean_AP_freq_list, label = 'Mean frequency n3')
+ax[1,0].plot(f_list, CV_list_3, label = 'CV n3')
+ax[2,0].plot(f_list, n3_bursts_mean_list, label = 'Mean num. of bursts n3')
+
+ax[0,1].plot(f_list, n2_mean_AP_freq_list, label = 'Mean frequency n2')
+ax[1,1].plot(f_list, CV_list_2, label = 'CV n2')
+ax[2,1].plot(f_list, n2_bursts_mean_list, label = 'Mean num. of bursts n2')
+
+ax[0,0].legend()
+ax[1,0].legend()
+ax[2,0].legend()
+
+ax[0,1].legend()
+ax[1,1].legend()
+ax[2,1].legend()
+
+plt.show()
 
 # =============================================================================
 # fig, ax = plt.subplots(2,2)
