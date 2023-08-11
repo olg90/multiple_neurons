@@ -567,16 +567,19 @@ ax[2,2].plot(n_23_history[:, 1], n_23_history[:, 0])
 ax[2,2].set_xlim([0,1])
 
 marker = 'o'
+markersize = 5
+markerfacecolor = 'r'
+
 ax[3,0].set_title('b_13')
-ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker)
+ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker, markersize = markersize, markerfacecolor = markerfacecolor)
 ax[3,0].set_xlim([0,1])
 
 ax[3,1].set_title('b_12')
-ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker)
+ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker, markersize = markersize, markerfacecolor = markerfacecolor)
 ax[3,1].set_xlim([0,1])
 
 ax[3,2].set_title('b_23')
-ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker)
+ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker, markersize = markersize, markerfacecolor = markerfacecolor)
 ax[3,2].set_xlim([0,1])
 
 
@@ -644,4 +647,3 @@ plt.show()
 
 # [M]
 #https://www.cell.com/current-biology/pdf/S0960-9822(04)00223-4.pdf
-
