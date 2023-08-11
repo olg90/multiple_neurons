@@ -109,9 +109,9 @@ def run_test(f, args):
     v3_history = [[v3_membrane, current_time]] # data array
     v2_history = [[v2_membrane, current_time]] # data array
     
-    b_13_history = []
-    b_12_history = []
-    b_23_history = []
+    b_13_history = [[0,0]]
+    b_12_history = [[0,0]]
+    b_23_history = [[0,0]]
     
     AP_times_3 = []
     AP_times_2 = []
@@ -227,6 +227,7 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
                 n_c_23_history.append([n_c_23, current_time])
@@ -259,6 +260,7 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
                 n_c_23_history.append([n_c_23, current_time])
@@ -291,6 +293,7 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
                 n_c_23_history.append([n_c_23, current_time])
@@ -323,6 +326,7 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
                 n_c_23_history.append([n_c_23, current_time])
@@ -352,6 +356,7 @@ def run_test(f, args):
                 n_bursts_2 = 0
                 
                 b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
                 n_23 -= b_23
                 n_c_23 += n_r*b_23
                 n_c_23_history.append([n_c_23, current_time])
@@ -453,7 +458,7 @@ p_r_23 = 0.3
 
 tau_v_3 = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
 tau_v_2 = 1
-lam = 20 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
+lam = 5 # nt decay rate, THIS TIMES (tau_v) CAN'T BE 1
 
 mu = 0.000001 # neuro-transmitter voltage coefficient (volts/1 NT)
 n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r] below
@@ -524,25 +529,56 @@ preneuron_firing_history = results['preneuron_firing_history']
 # plt.show()
 # =============================================================================
 
-fig, ax = plt.subplots(4,2)
+fig, ax = plt.subplots(4,3)
 
 ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
 ax[0,0].set_title('v3')
 ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
                                                         len(preneuron_firing_history)),
                 s = 1, color = 'r')
+ax[0,0].set_xlim([0,1])
 
 ax[0,1].set_title('v2')
 ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
-
-ax[1,1].set_title('n_c_12')
-ax[1,1].plot(n_c_12_history[:, 1], n_c_12_history[:, 0])
+ax[0,1].set_xlim([0,1])
 
 ax[1,0].set_title('n_c_13')
 ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
+ax[1,0].set_xlim([0,1])
 
-ax[2,0].set_title('n vesicles')
+ax[1,1].set_title('n_c_12')
+ax[1,1].plot(n_c_12_history[:, 1], n_c_12_history[:, 0])
+ax[1,1].set_xlim([0,1])
+
+ax[1,2].set_title('n_c_23')
+ax[1,2].plot(n_c_23_history[:, 1], n_c_23_history[:, 0])
+ax[1,2].set_xlim([0,1])
+
+ax[2,0].set_title('n_13')
 ax[2,0].plot(n_13_history[:, 1], n_13_history[:, 0])
+ax[2,0].set_xlim([0,1])
+
+ax[2,1].set_title('n_12')
+ax[2,1].plot(n_12_history[:, 1], n_12_history[:, 0])
+ax[2,1].set_xlim([0,1])
+
+ax[2,2].set_title('n_23')
+ax[2,2].plot(n_23_history[:, 1], n_23_history[:, 0])
+ax[2,2].set_xlim([0,1])
+
+
+ax[3,0].set_title('b_13')
+ax[3,0].plot(b_13_history[:, 1], b_13_history[:, 0])
+ax[3,0].set_xlim([0,1])
+
+ax[3,1].set_title('b_12')
+ax[3,1].plot(b_12_history[:, 1], b_12_history[:, 0])
+ax[3,1].set_xlim([0,1])
+
+ax[3,2].set_title('b_23')
+ax[3,2].plot(b_23_history[:, 1], b_23_history[:, 0])
+ax[3,2].set_xlim([0,1])
+
 
 # =============================================================================
 # ax[1,1].plot(b_history[:, 1], b_history[:, 0])
@@ -608,5 +644,4 @@ plt.show()
 
 # [M]
 #https://www.cell.com/current-biology/pdf/S0960-9822(04)00223-4.pdf
-
 
