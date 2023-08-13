@@ -542,7 +542,7 @@ k_13_test = {'id':'k_13', 'n_c_star':100000, 'H_k':1}
 k_12_test = {'id':'k_12', 'n_c_star':100000, 'H_k':1}
 k_23_test = {'id':'k_23', 'n_c_star':100000, 'H_k':1}
 
-test_types = ['k_13', 'k_12', 'k_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
+test_types = ['k_13', 'k_12', 'k_23', 'p_r_13', 'p_r_12', 'p_r_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
 
 n_c_star = 100000
 H_p_r = 4
@@ -692,9 +692,6 @@ n2_bursts_mean_list_IFL = []
 n3_mean_AP_freq_list_open = []
 CV_list_3_open = []
 n3_bursts_mean_list_open = []
-
-
-
 
 for f in f_list:
     
