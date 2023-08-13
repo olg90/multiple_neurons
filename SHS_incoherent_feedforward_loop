@@ -493,7 +493,7 @@ def run_test(f, args):
 ###############################################################################
 # Test 1
 
-run_time = 1
+run_time = 10
 
 # Rates (#/s)
 AP_freq =  100 # AP/s
@@ -542,8 +542,7 @@ k_13_test = {'id':'k_13', 'n_c_star':100000, 'H_k':1}
 k_12_test = {'id':'k_12', 'n_c_star':100000, 'H_k':1}
 k_23_test = {'id':'k_23', 'n_c_star':100000, 'H_k':1}
 
-test_types = ['k_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
-
+test_types = ['k_13', 'k_12', 'k_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
 
 n_c_star = 100000
 H_p_r = 4
@@ -689,6 +688,9 @@ n3_mean_AP_freq_list_open = []
 CV_list_3_open = []
 n3_bursts_mean_list_open = []
 
+
+
+
 for f in f_list:
     
     print(f)
@@ -712,32 +714,51 @@ for f in f_list:
     CV_list_3_open.append(results_open['CV_3'])
     n3_bursts_mean_list_open.append(np.mean(results_open['n_bursts_list_3']))
 
+n3_mean_AP_freq_list_IFL = np.array(n3_mean_AP_freq_list_IFL)
+CV_list_3_IFL = np.array(CV_list_3_IFL)
+n3_bursts_mean_list_IFL = np.array(n3_bursts_mean_list_IFL)
 
-fig, ax = plt.subplots(3,3)
+n2_mean_AP_freq_list_IFL = np.array(n2_mean_AP_freq_list_IFL)
+CV_list_2_IFL = np.array(CV_list_2_IFL)
+n2_bursts_mean_list_IFL = np.array(n2_bursts_mean_list_IFL)
 
-ax[0,0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'Mean frequency n3')
-ax[1,0].plot(f_list, CV_list_3_IFL, label = 'CV n3')
-ax[2,0].plot(f_list, n3_bursts_mean_list_IFL, label = 'Mean num. of bursts n3')
+n3_mean_AP_freq_list_open = np.array(n3_mean_AP_freq_list_open)
+CV_list_3_open = np.array(CV_list_3_open)
+n3_bursts_mean_list_open = np.array(n3_bursts_mean_list_open)
 
-ax[0,1].plot(f_list, n2_mean_AP_freq_list_IFL, label = 'Mean frequency n2')
-ax[1,1].plot(f_list, CV_list_2_IFL, label = 'CV n2')
-ax[2,1].plot(f_list, n2_bursts_mean_list_IFL, label = 'Mean num. of bursts n2')
 
-ax[0,2].plot(f_list, n3_mean_AP_freq_list_open, label = 'Mean frequency n3')
-ax[1,2].plot(f_list, CV_list_3_open, label = 'CV n3')
-ax[2,2].plot(f_list, n3_bursts_mean_list_open, label = 'Mean num. of bursts n3')
+#%%
+fig, ax = plt.subplots(1,3)
 
-ax[0,0].legend()
-ax[1,0].legend()
-ax[2,0].legend()
+fontsize = 20
 
-ax[0,1].legend()
-ax[1,1].legend()
-ax[2,1].legend()
+fig.suptitle(test_types)
 
-ax[0,2].legend()
-ax[1,2].legend()
-ax[2,2].legend()
+ax[0].set_title('Mean frequency (f)', fontsize = fontsize)
+ax[0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'n3 - IFL')
+ax[0].plot(f_list, n2_mean_AP_freq_list_IFL, label = 'n2 - IFL')
+ax[0].plot(f_list, n3_mean_AP_freq_list_open, label = 'n3 - open')
+ax[0].tick_params(axis = 'both', labelsize = fontsize)
+
+ax[1].set_title('Normalized CV', fontsize = fontsize)
+ax[1].plot(f_list, CV_list_3_IFL / CV_list_3_open, label = 'n3 - IFL/OPEN')
+# =============================================================================
+# ax[1].plot(f_list, CV_list_2_IFL, label = 'n2 - IFL')
+# =============================================================================
+ax[1].set_xlabel('Input frequency (f)', fontsize = fontsize)
+ax[1].tick_params(axis = 'both', labelsize = fontsize)
+
+ax[2].set_title('Mean number of bursts', fontsize = fontsize)
+ax[2].plot(f_list, n3_bursts_mean_list_IFL, label = 'n3 - IFL')
+ax[2].plot(f_list, n2_bursts_mean_list_IFL, label = 'n2 - IFL')
+ax[2].plot(f_list, n3_bursts_mean_list_open, label = 'n3 - open')
+ax[2].tick_params(axis = 'both', labelsize = fontsize)
+
+ax[0].legend(fontsize = fontsize - 5)
+
+ax[1].legend(fontsize = fontsize - 5)
+
+ax[2].legend(fontsize = fontsize - 5)
 
 plt.show()
 
