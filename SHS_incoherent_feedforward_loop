@@ -556,10 +556,10 @@ def run_test(f, args):
 ###############################################################################
 # Test 1
 
-run_time = 2
+run_time = 60
 
 # Rates (#/s)
-AP_freq =  10 # AP/s
+AP_freq =  100 # AP/s
 
 k = 20
 M = 200
@@ -593,7 +593,7 @@ n_r = 10000 # number of neurotransmitters released per AP, 10k from source [n_r]
 vth_3 = 0.2 # AP-firing voltage threshold
 vth_2 = 0.2
 
-delta_t = 0.01
+delta_t = 0.001
 
 # WORK IN PROGRESS
 
@@ -608,7 +608,7 @@ k_23_test = {'id':'k_23', 'n_c_star':100000, 'H_k':1}
 test_types = ['p_r_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
 
 n_c_star = 1000000
-H_p_r = 2
+H_p_r = 10
 H_k = 6
 
 if lam*tau_v_3 == 1:
@@ -638,6 +638,7 @@ args_open = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23,
                n_c_star = n_c_star, H_p_r = H_p_r, H_k = H_k,
                test_types = test_types, model = 'open')
 # -----------------------------------------------------------------------------
+#%%
 results = run_test(AP_freq, args_IFL)
 r_open = run_test(AP_freq, args_open)
 
@@ -685,6 +686,8 @@ ax[0,0].set_xlim([0,run_time])
 ax[0,1].set_title('v2')
 ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
 ax[0,1].set_xlim([0,run_time])
+
+ax[0,2].plot(results['p_r_23_history'][:, 1], results['p_r_23_history'][:, 0])
 
 ax[1,0].set_title('n_c_13')
 ax[1,0].plot(n_c_13_history[:, 1], n_c_13_history[:, 0])
@@ -736,6 +739,8 @@ ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n3 = {}'.format(np.around(
 ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n2 = {}'.format(np.around(mean_inter_AP_time_2,3)))
 ax[0,2].plot([], [], ' ', label = '---------------------------------------')
 ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 15)
+
+
 
 plt.show()
 
@@ -797,7 +802,7 @@ fig, ax = plt.subplots(1,3)
 
 fontsize = 20
 
-fig.suptitle(test_types)
+fig.suptitle('Test type {}'.format(test_types), fontsize = fontsize)
 
 ax[0].set_title('Mean frequency (f)', fontsize = fontsize)
 ax[0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'n3 - IFL')
