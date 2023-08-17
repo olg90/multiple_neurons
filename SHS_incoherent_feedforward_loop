@@ -605,7 +605,7 @@ k_13_test = {'id':'k_13', 'n_c_star':100000, 'H_k':1}
 k_12_test = {'id':'k_12', 'n_c_star':100000, 'H_k':1}
 k_23_test = {'id':'k_23', 'n_c_star':100000, 'H_k':1}
 
-test_types = ['p_r_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
+test_types = ['k_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
 
 n_c_star = 1000000
 H_p_r = 10
@@ -800,7 +800,7 @@ fig, ax = plt.subplots(1,4)
 
 fontsize = 20
 
-fig.suptitle('Test type {}'.format(test_types), fontsize = fontsize)
+fig.suptitle('{} as a function of $n_c$'.format(test_types), fontsize = fontsize)
 
 ax[0].set_title('Mean frequency (f)', fontsize = fontsize)
 ax[0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'n3 - IFL')
@@ -843,6 +843,9 @@ ax[3].plot([], [], ' ', label = '-----------------------------------------------
 ax[3].plot([], [], ' ', label = '$f = {}, k = {}, M = {}, p_r = {}$'.format(f, k, M, p_r))
 ax[3].plot([], [], ' ', label = 'tau_3 = {}, tau_2 = {}, $\lambda = {}$, rho = {}'.format(tau_v_3, tau_v_2, lam, rho))
 ax[3].plot([], [], ' ', label = 'n_r = {}, $\Delta t$ = {}'.format(n_r, delta_t))
+ax[3].plot([], [], ' ', label = '-----------------------------------------------')
+ax[3].plot([], [], ' ', label = 'n_r is number of neurotransmitters released')
+ax[3].plot([], [], ' ', label = 'rho is voltage coefficient for $n_{c,23}$')
 ax[3].set_xticks([])
 ax[3].set_yticks([])
 
