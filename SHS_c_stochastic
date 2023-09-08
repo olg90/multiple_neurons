@@ -1,0 +1,815 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def get_time_to(text, f, k, M, n):
+    
+    if text == 'f':
+        return np.random.exponential(1./f) # next reaction time
+    if text == 'n':
+        if M > n:
+            return np.random.exponential(1./(k*(M-n)))
+        else:
+            return np.inf
+
+def get_v(t, v0, tau):
+    return v0*np.exp(-1/tau*t)
+
+def get_c(mean, var):
+    return np.random.gamma(mean**2/var, var/mean)
+
+def hill_function(y, x_max, x_star, H):
+    # x is n_c or k
+    return x_max / (1 + (y/x_star)**H)
+
+def get_arg_type(i):
+    
+    if i == 0:
+        return 'f'
+    if i == 1:
+        return 'n13'
+    if i == 2:
+        return 'n12'
+    if i == 3:
+        return 'n23'
+    if i == 4:
+        return 'measure'
+    
+def to_dict(**x):
+    return x
+
+def run_test(f, args):
+    
+    # Define parameters
+    run_time = args['run_time']
+    
+    k_13 = args['k_13'] # Refill/s (n |--> n+1)
+    k_12 = args['k_12'] # Refill/s (n |--> n+1)
+    k_23 = args['k_23'] # Refill/s (n |--> n+1)
+    
+    tau_v_3 = args['tau_v_3'] # voltage decay rate
+    tau_v_2 = args['tau_v_2'] # voltage decay rate
+    
+    M_13 = args['M_13']
+    M_12 = args['M_12']
+    M_23 = args['M_23']
+    
+    p_r_13 = args['p_r_13']
+    p_r_12 = args['p_r_12']
+    p_r_23 = args['p_r_23']
+    
+    vth_3 = args['vth_3']
+    vth_2 = args['vth_2']
+    
+    n_c_star = args['n_c_star']
+    H_p_r = args['H_p_r']
+    H_k = args['H_k']
+    
+    test_types = args['test_types']
+
+    delta_t = args['delta_t']
+    
+    model = args['model']
+    
+    c_mean = args['c_mean']
+    c_var = args['c_var']
+    
+    current_time = 0
+    v3_membrane = 0
+    v2_membrane = 0
+    
+    n_13 = 0
+    n_12 = 0
+    n_23 = 0
+    
+    n_c_13 = 0
+    n_c_12 = 0
+    n_c_23 = 0
+    
+    n_13_history = [[n_13, current_time]]
+    n_12_history = [[n_12, current_time]]
+    n_23_history = [[n_23, current_time]]
+    
+    n_c_13_history = [[n_c_13, current_time]]
+    n_c_12_history = [[n_c_12, current_time]]
+    n_c_23_history = [[n_c_23, current_time]]
+    
+    v3_history = [[v3_membrane, current_time]] # data array
+    v2_history = [[v2_membrane, current_time]] # data array
+    
+    b_13_history = []
+    b_12_history = []
+    b_23_history = []
+    
+    AP_times_3 = []
+    AP_times_2 = []
+    
+    p_r_13_history = []
+    p_r_12_history = []
+    p_r_23_history = []
+    
+    k_13_history = []
+    k_12_history = []
+    k_23_history = []
+
+    n_bursts_3 = 0
+    n_bursts_2 = 0
+    
+    n_bursts_list_3 = []
+    n_bursts_list_2 = []
+    
+    preneuron_firing_history = []
+    interneuron_firing_history = []
+    
+    t_measure = delta_t
+    
+    while current_time < run_time:
+        
+        time_to_f = get_time_to('f', f, 0, 0, 0) # next reaction time
+        
+        if 'k_13' in test_types:
+            k_13_hill = hill_function(n_c_13, k_13, n_c_star, H_k)
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M_13, n_13)
+        else:
+            k_13_hill = k_13
+            time_to_n_13 = get_time_to('n', f, k_13_hill, M_13, n_13)      
+            
+        if 'k_12' in test_types:
+            k_12_hill = hill_function(n_c_12, k_12, n_c_star, H_k)
+            time_to_n_12 = get_time_to('n', f, k_12_hill, M_12, n_12)
+        else:
+            k_12_hill = k_12
+            time_to_n_12 = get_time_to('n', f, k_12_hill, M_12, n_12)    
+            
+        if 'k_23' in test_types:
+            k_23_hill = hill_function(n_c_23, k_23, n_c_star, H_k)
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M_23, n_23)
+        else:
+            k_23_hill = k_23
+            time_to_n_23 = get_time_to('n', f, k_23_hill, M_23, n_23)     
+
+        k_13_history.append([k_13_hill, current_time])
+        k_12_history.append([k_12_hill, current_time])
+        k_23_history.append([k_23_hill, current_time])
+        
+        times_array = np.array([time_to_f, 
+                    time_to_n_13, time_to_n_12, time_to_n_23, t_measure])
+    
+        t_min_arg = np.argmin(times_array)
+        arg_type = get_arg_type(t_min_arg)
+        t_min = times_array[t_min_arg]
+    
+        if arg_type == 'f':
+            
+            preneuron_firing_history.append(current_time)
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
+            else:
+                p_r_13_hill = p_r_13
+                
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23            
+            
+            p_r_13_history.append([p_r_13_hill, current_time])
+            p_r_12_history.append([p_r_12_hill, current_time])
+            p_r_23_history.append([p_r_23_hill, current_time])
+                
+            b_13 = np.random.binomial(n_13, p_r_13_hill)
+            
+            if model == 'IFL':
+                b_12 = np.random.binomial(n_12, p_r_12_hill)
+            if model == 'open':
+                b_12 = 0
+                
+            c_13 = get_c(c_mean, c_var)
+            c_12 = get_c(c_mean, c_var)
+                
+            v3_membrane = get_v(t_min, v3_membrane, tau_v_3) + c_13*b_13
+            v2_membrane = get_v(t_min, v2_membrane, tau_v_2) + c_12*b_12
+            
+            b_13_history.append([b_13, current_time])
+            b_12_history.append([b_12, current_time])
+            
+            n_bursts_3 += 1
+            n_bursts_2 += 1
+
+            n_13 -= b_13
+            n_12 -= b_12
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_list_3.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_list_2.append(n_bursts_2)
+                n_bursts_2 = 0
+                n_bursts_3 += 1
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
+                n_23 -= b_23
+                
+                c_23 = get_c(c_mean, c_var)
+                v3_membrane = v3_membrane - c_23*b_23
+                
+                interneuron_firing_history.append(current_time)
+                
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])
+            n_23_history.append([n_23, current_time])
+            current_time += t_min
+            t_measure -= t_min
+
+        elif arg_type == 'n13':
+            
+            v3_membrane = get_v(t_min, v3_membrane, tau_v_3)
+            v2_membrane = get_v(t_min, v2_membrane, tau_v_2)
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
+            else:
+                p_r_13_hill = p_r_13
+                
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23    
+            
+            n_13 += 1
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_list_3.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_list_2.append(n_bursts_2)
+                n_bursts_2 = 0
+                n_bursts_3 += 1
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
+                n_23 -= b_23
+                
+                c_23 = get_c(c_mean, c_var)
+                v3_membrane = v3_membrane - c_23*b_23
+                
+                interneuron_firing_history.append(current_time)
+                
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])                
+            n_23_history.append([n_23, current_time])
+            current_time += t_min
+            t_measure -= t_min
+
+        elif arg_type == 'n12':
+
+            v3_membrane = get_v(t_min, v3_membrane, tau_v_3)
+            v2_membrane = get_v(t_min, v2_membrane, tau_v_2)
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
+            else:
+                p_r_13_hill = p_r_13
+                
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23    
+            
+            n_12 += 1
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_list_3.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_list_2.append(n_bursts_2)
+                n_bursts_2 = 0
+                n_bursts_3 += 1
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
+                n_23 -= b_23
+                
+                c_23 = get_c(c_mean, c_var)
+                v3_membrane = v3_membrane - c_23*b_23
+                
+                interneuron_firing_history.append(current_time)
+                
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])
+            n_23_history.append([n_23, current_time])
+            current_time += t_min
+            t_measure -= t_min
+            
+        elif arg_type == 'n23':
+
+            v3_membrane = get_v(t_min, v3_membrane, tau_v_3)
+            v2_membrane = get_v(t_min, v2_membrane, tau_v_2)
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
+            else:
+                p_r_13_hill = p_r_13
+                
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23    
+            
+            n_23 += 1
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_list_3.append(n_bursts_3)
+                n_bursts_3 = 0
+                
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_list_2.append(n_bursts_2)
+                n_bursts_2 = 0
+                n_bursts_3 += 1
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
+                n_23 -= b_23
+                
+                c_23 = get_c(c_mean, c_var)
+                v3_membrane = v3_membrane - c_23*b_23
+                
+                interneuron_firing_history.append(current_time)
+                
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])                
+            n_23_history.append([n_23, current_time])
+
+            current_time += t_min
+            t_measure -= t_min
+            
+        else: # Take measurement
+            
+            v3_membrane = get_v(t_min, v3_membrane, tau_v_3)
+            v2_membrane = get_v(t_min, v2_membrane, tau_v_2)
+            
+            
+            if 'p_r_13' in test_types:
+                p_r_13_hill = hill_function(n_c_13, p_r_13, n_c_star, H_p_r)
+            else:
+                p_r_13_hill = p_r_13
+                
+            if 'p_r_12' in test_types:
+                p_r_12_hill = hill_function(n_c_12, p_r_12, n_c_star, H_p_r)
+            else:
+                p_r_12_hill = p_r_12
+                
+            if 'p_r_23' in test_types:
+                p_r_23_hill = hill_function(n_c_23, p_r_23, n_c_star, H_p_r)
+            else:
+                p_r_23_hill = p_r_23    
+            
+            if v3_membrane >= vth_3:
+                v3_membrane = 0
+                AP_times_3.append(current_time)
+                n_bursts_list_3.append(n_bursts_3)
+                n_bursts_3 = 0
+
+            if v2_membrane >= vth_2:
+                v2_membrane = 0
+                AP_times_2.append(current_time)
+                n_bursts_list_2.append(n_bursts_2)
+                n_bursts_2 = 0
+                n_bursts_3 += 1
+                
+                b_23 = np.random.binomial(n_23, p_r_23_hill)
+                b_23_history.append([b_23, current_time])
+                n_23 -= b_23
+                
+                c_23 = np.random.lognormal(0.02, 0.1)
+                v3_membrane = v3_membrane - c_23*b_23
+                
+                interneuron_firing_history.append(current_time)
+                
+            n_13_history.append([n_13, current_time])
+            n_12_history.append([n_12, current_time])                   
+            n_23_history.append([n_23, current_time])
+    
+            v3_history.append([v3_membrane, current_time])
+            v2_history.append([v2_membrane, current_time])
+            
+            n_c_13_history.append([n_c_13, current_time])
+            n_c_12_history.append([n_c_12, current_time])
+            n_c_23_history.append([n_c_23, current_time])
+            
+            current_time += t_min
+            t_measure = delta_t
+            
+    n_13_history = np.array(n_13_history)
+    n_12_history = np.array(n_12_history)
+    n_23_history = np.array(n_23_history)
+    
+    v3_history = np.array(v3_history) # data array
+    v2_history = np.array(v2_history) # data array
+    
+    b_13_history = np.array(b_13_history)
+    b_12_history = np.array(b_12_history)
+    b_23_history = np.array(b_23_history)
+    
+    AP_times_3 = np.array(AP_times_3)
+    AP_times_2 = np.array(AP_times_2)
+    
+    inter_AP_times_3 = np.diff(AP_times_3)
+    inter_AP_times_2 = np.diff(AP_times_2)
+    
+    if len(inter_AP_times_3) < 2:
+        mean_inter_AP_time_3 = np.nan
+        CV_3 = np.nan
+    else:
+        mean_inter_AP_time_3 = np.mean(inter_AP_times_3)
+        CV_3 = np.var(inter_AP_times_3) / mean_inter_AP_time_3
+        
+    if len(inter_AP_times_2) < 2:
+        mean_inter_AP_time_2 = np.nan
+        CV_2 = np.nan
+    else:
+        mean_inter_AP_time_2 = np.mean(inter_AP_times_2)
+        CV_2 = np.var(inter_AP_times_2) / mean_inter_AP_time_2
+    
+    return {'v3_history': np.array(v3_history),
+            'v2_history': np.array(v2_history),
+            'n_13_history':np.array(n_13_history),
+            'n_12_history':np.array(n_12_history),
+            'n_23_history':np.array(n_23_history),
+            'b_13_history':np.array(b_13_history),
+            'b_12_history':np.array(b_12_history),
+            'b_23_history':np.array(b_23_history),
+            'AP_times_3':np.array(AP_times_3),
+            'AP_times_2':np.array(AP_times_2),
+            'inter_AP_times_3':np.array(inter_AP_times_3),
+            'inter_AP_times_2':np.array(inter_AP_times_2),
+            'n_bursts_list_3':np.array(n_bursts_list_3),
+            'n_bursts_list_2':np.array(n_bursts_list_2),
+            'mean_inter_AP_time_3':mean_inter_AP_time_3, 
+            'mean_inter_AP_time_2':mean_inter_AP_time_2, 
+            'CV_3':np.array(CV_3), 
+            'CV_2':np.array(CV_2), 
+            'k_13_history':np.array(k_13_history), 
+            'k_12_history':np.array(k_12_history), 
+            'k_23_history':np.array(k_23_history), 
+            'p_r_13_history':np.array(p_r_13_history),
+            'p_r_12_history':np.array(p_r_12_history),
+            'p_r_23_history':np.array(p_r_23_history),
+            'preneuron_firing_history':preneuron_firing_history,
+            'interneuron_firing_history':interneuron_firing_history}
+
+###############################################################################
+#
+#                               Main Code
+#
+###############################################################################
+# Test 1
+
+run_time = 1
+
+# Rates (#/s)
+AP_freq =  100 # AP/s
+
+k = 20
+M = 200
+
+c_mean = 0.02
+c_var = 0.001
+
+p_r = 0.3
+
+k_13 = k # Refill/s (n |--> n+1)
+k_12 = k
+k_23 = k
+
+M_13 = M # number of docking sites, from source [M] below, says 200 but at rest only 100
+M_12 = M
+M_23 = M
+
+p_r_13 = p_r # 0.3
+p_r_12 = p_r
+p_r_23 = p_r
+
+tau_v_3 = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
+tau_v_2 = 1 # inverse voltage decay rate, THIS TIMES (lam) CAN'T BE 1
+
+
+vth_3 = 0.2 # AP-firing voltage threshold
+vth_2 = 0.2
+
+delta_t = 0.01
+
+# WORK IN PROGRESS
+
+p_r_13_test = {'id':'p_r_1_3', 'n_c_star':100000, 'H_p_r': 4}
+p_r_12_test = {'id':'p_r_1_2', 'n_c_star':100000, 'H_p_r': 4}
+p_r_23_test = {'id':'p_r_2_3', 'n_c_star':100000, 'H_p_r': 4}
+
+k_13_test = {'id':'k_13', 'n_c_star':100000, 'H_k':1}
+k_12_test = {'id':'k_12', 'n_c_star':100000, 'H_k':1}
+k_23_test = {'id':'k_23', 'n_c_star':100000, 'H_k':1}
+
+test_types = ['k_23'] # LIST OF: p_r_12, p_r_13, p_r_23, k_13, k_12, k_23
+
+n_c_star = 1000000
+H_p_r = 10
+H_k = 6
+
+args_IFL = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23, 
+               M_13 = M_13, M_12 = M_12, M_23 = M_23, 
+               p_r_13 = p_r_13, p_r_12 = p_r_12, p_r_23 = p_r_23, 
+               vth_3 = vth_3, vth_2 = vth_2,
+               c_mean = c_mean, c_var = c_var,
+               tau_v_3 = tau_v_3, tau_v_2 = tau_v_2,
+               delta_t = delta_t, run_time = run_time, 
+               n_c_star = n_c_star, H_p_r = H_p_r, H_k = H_k,
+               test_types = test_types, model = 'IFL')
+
+args_open = to_dict(k_13 = k_13, k_12 = k_12, k_23 = k_23, 
+               M_13 = M_13, M_12 = M_12, M_23 = M_23, 
+               p_r_13 = p_r_13, p_r_12 = p_r_12, p_r_23 = p_r_23, 
+               c_mean = c_mean, c_var = c_var,
+               vth_3 = vth_3, vth_2 = vth_2,
+               tau_v_3 = tau_v_3, tau_v_2 = tau_v_2,
+               delta_t = delta_t, run_time = run_time, 
+               n_c_star = n_c_star, H_p_r = H_p_r, H_k = H_k,
+               test_types = test_types, model = 'open')
+# -----------------------------------------------------------------------------
+results = run_test(AP_freq, args_IFL)
+r_open = run_test(AP_freq, args_open)
+
+v3_history = results['v3_history']
+v2_history = results['v2_history']
+n_bursts_list_3 = results['n_bursts_list_3']
+n_bursts_list_2= results['n_bursts_list_2']
+mean_inter_AP_time_3 = results['mean_inter_AP_time_3']
+mean_inter_AP_time_2 = results['mean_inter_AP_time_2']
+n_13_history = results['n_13_history']
+n_12_history = results['n_12_history']
+n_23_history = results['n_23_history']
+AP_times_3 = results['AP_times_3']
+AP_times_2 = results['AP_times_2']
+p_r_13_history = results['p_r_13_history']
+p_r_12_history = results['p_r_12_history']
+p_r_23_history = results['p_r_23_history']
+k_13_history = results['k_13_history']
+k_12_history = results['k_12_history']
+k_23_history = results['k_23_history']
+b_13_history = results['b_13_history']
+b_12_history = results['b_12_history']
+b_23_history = results['b_23_history']
+preneuron_firing_history = results['preneuron_firing_history']
+interneuron_firing_history = results['interneuron_firing_history']
+
+v3_open = r_open['v3_history']
+
+fig, ax = plt.subplots(3,3)
+fig.suptitle('Test types = {}'.format(test_types))
+
+ax[0,0].plot(v3_history[:, 1], v3_history[:, 0])
+ax[0,0].set_title('v3')
+ax[0,0].scatter(preneuron_firing_history, 0*np.linspace(0,run_time, 
+                                                        len(preneuron_firing_history)),
+                s = 1, color = 'r')
+ax[0,0].scatter(interneuron_firing_history, 0*np.linspace(0,run_time, 
+                                                        len(interneuron_firing_history)),
+                s = 1, color = 'k')
+ax[0,0].set_xlim([0,run_time])
+
+ax[0,1].set_title('v2')
+ax[0,1].plot(v2_history[:, 1], v2_history[:, 0])
+ax[0,1].set_xlim([0,run_time])
+
+ax[0,2].plot(results['p_r_23_history'][:, 1], results['p_r_23_history'][:, 0])
+
+ax[1,0].set_title('n_13')
+ax[1,0].plot(n_13_history[:, 1], n_13_history[:, 0])
+ax[1,0].set_xlim([0,run_time])
+
+ax[1,1].set_title('n_12')
+ax[1,1].plot(n_12_history[:, 1], n_12_history[:, 0])
+ax[1,1].set_xlim([0,run_time])
+
+ax[1,2].set_title('n_23')
+ax[1,2].plot(n_23_history[:, 1], n_23_history[:, 0])
+ax[1,2].set_xlim([0,run_time])
+
+marker = 'o'
+markersize = 5
+markerfacecolor = 'r'
+
+ax[2,0].set_title('b_13')
+ax[2,0].plot(b_13_history[:, 1], b_13_history[:, 0], marker = marker, 
+             markersize = markersize, markerfacecolor = markerfacecolor)
+ax[2,0].set_xlim([0,run_time])
+
+ax[2,1].set_title('b_12')
+ax[2,1].plot(b_12_history[:, 1], b_12_history[:, 0], marker = marker, 
+             markersize = markersize, markerfacecolor = markerfacecolor)
+ax[2,1].set_xlim([0,run_time])
+
+ax[2,2].set_title('b_23')
+ax[2,2].plot(b_23_history[:, 1], b_23_history[:, 0], marker = marker, 
+             markersize = markersize, markerfacecolor = markerfacecolor)
+ax[2,2].set_xlim([0,run_time])
+
+ax[0,2].plot(v3_open[:, 1], v3_open[:, 0])
+ax[0,2].plot([], [], ' ', label = 'Mean num bursts n3 = {}'.format(np.around(np.mean(n_bursts_list_3), 3)))
+ax[0,2].plot([], [], ' ', label = 'Mean num bursts n2 = {}'.format(np.around(np.mean(n_bursts_list_2), 3)))
+ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n3 = {}'.format(np.around(mean_inter_AP_time_3,3)))
+ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n2 = {}'.format(np.around(mean_inter_AP_time_2,3)))
+ax[0,2].plot([], [], ' ', label = '---------------------------------------')
+ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 15)
+
+plt.show()
+
+# ------------------------------ Test 2
+
+# =============================================================================
+# f_list = range(1, 101)
+# n3_mean_AP_freq_list_IFL = []
+# CV_list_3_IFL = []
+# n3_bursts_mean_list_IFL = []
+# 
+# n2_mean_AP_freq_list_IFL = []
+# CV_list_2_IFL = []
+# n2_bursts_mean_list_IFL = []
+# 
+# n3_mean_AP_freq_list_open = []
+# CV_list_3_open = []
+# n3_bursts_mean_list_open = []
+# 
+# for f in f_list:
+#     
+#     print(f)
+#     
+#     results_IFL = run_test(f, args_IFL)
+#     results_open = run_test(f, args_open)
+#     
+#     # IFL
+#     
+#     n3_mean_AP_freq_list_IFL.append(1./results_IFL['mean_inter_AP_time_3'])
+#     CV_list_3_IFL.append(results_IFL['CV_3'])
+#     n3_bursts_mean_list_IFL.append(np.mean(results_IFL['n_bursts_list_3']))
+# 
+#     n2_mean_AP_freq_list_IFL.append(1./results_IFL['mean_inter_AP_time_2'])
+#     CV_list_2_IFL.append(results_IFL['CV_2'])
+#     n2_bursts_mean_list_IFL.append(np.mean(results_IFL['n_bursts_list_2']))
+#     
+#     # Open
+#     
+#     n3_mean_AP_freq_list_open.append(1./results_open['mean_inter_AP_time_3'])
+#     CV_list_3_open.append(results_open['CV_3'])
+#     n3_bursts_mean_list_open.append(np.mean(results_open['n_bursts_list_3']))
+# 
+# n3_mean_AP_freq_list_IFL = np.array(n3_mean_AP_freq_list_IFL)
+# CV_list_3_IFL = np.array(CV_list_3_IFL)
+# n3_bursts_mean_list_IFL = np.array(n3_bursts_mean_list_IFL)
+# 
+# n2_mean_AP_freq_list_IFL = np.array(n2_mean_AP_freq_list_IFL)
+# CV_list_2_IFL = np.array(CV_list_2_IFL)
+# n2_bursts_mean_list_IFL = np.array(n2_bursts_mean_list_IFL)
+# 
+# n3_mean_AP_freq_list_open = np.array(n3_mean_AP_freq_list_open)
+# CV_list_3_open = np.array(CV_list_3_open)
+# n3_bursts_mean_list_open = np.array(n3_bursts_mean_list_open)
+# 
+# fig, ax = plt.subplots(1,4)
+# 
+# fontsize = 20
+# 
+# fig.suptitle('{} as a function of $n_c$'.format(test_types), fontsize = fontsize)
+# 
+# ax[0].set_title('Mean frequency (f)', fontsize = fontsize)
+# ax[0].plot(f_list, n3_mean_AP_freq_list_IFL, label = 'n3 - IFL')
+# ax[0].plot(f_list, n2_mean_AP_freq_list_IFL, label = 'n2 - IFL')
+# ax[0].plot(f_list, n3_mean_AP_freq_list_open, label = 'n3 - open')
+# ax[0].tick_params(axis = 'both', labelsize = fontsize)
+# 
+# ax[1].set_title('Normalized CV', fontsize = fontsize)
+# ax[1].plot(f_list, CV_list_3_IFL / CV_list_3_open, label = 'n3 - IFL/OPEN')
+# # =============================================================================
+# # ax[1].plot(f_list, CV_list_2_IFL, label = 'n2 - IFL')
+# # =============================================================================
+# ax[1].set_xlabel('Input frequency (f)', fontsize = fontsize)
+# ax[1].tick_params(axis = 'both', labelsize = fontsize)
+# 
+# ax[2].set_title('Mean number of bursts', fontsize = fontsize)
+# ax[2].plot(f_list, n3_bursts_mean_list_IFL, label = 'n3 - IFL')
+# ax[2].plot(f_list, n2_bursts_mean_list_IFL, label = 'n2 - IFL')
+# ax[2].plot(f_list, n3_bursts_mean_list_open, label = 'n3 - open')
+# ax[2].tick_params(axis = 'both', labelsize = fontsize)
+# 
+# ax[3].plot([], [], ' ', label = 'SHS: Dynamics')
+# ax[3].plot([], [], ' ', label = '$ \dot v_3 = \mu*n_{c,13}-rho*n_{c,23}-v_3(t)/tau_3 $')
+# ax[3].plot([], [], ' ', label = '$ \dot v_2 = \mu*n_{c,12}-v_3(t)/tau_{2} $')
+# ax[3].plot([], [], ' ', label = '$ \dot n_{c,13} = -\lambda n_{c,13} $')
+# ax[3].plot([], [], ' ', label = '$ \dot n_{c,12} = -\lambda n_{c,12} $')
+# ax[3].plot([], [], ' ', label = '$ \dot n_{c,23} = -\lambda n_{c,23} $')
+# # =============================================================================
+# # ax[3].plot([], [], ' ', label = '-----------------------------------------------')
+# # ax[3].plot([], [], ' ', label = 'SHS: Resets and guards')
+# # ax[3].plot([], [], ' ', label = '(1) $f:  b_i$ ~ Binomial($n_i, p_{r})$')
+# # ax[3].plot([], [], ' ', label = '          $n_i → n_i - b_i$')
+# # ax[3].plot([], [], ' ', label = '          $n_{c,i} → n_{c,i} + n_r*b_i$')
+# # ax[3].plot([], [], ' ', label = '          For i = (1,3), (1,2), (2,3) ')
+# # ax[3].plot([], [], ' ', label = '(2.) $k_i(M_i - n_i): n_i → n_i + 1$')
+# # ax[3].plot([], [], ' ', label = '          For i = (1,3), (1,2), (2,3) ')
+# # ax[3].plot([], [], ' ', label = '-----------------------------------------------')
+# # =============================================================================
+# ax[3].plot([], [], ' ', label = '-----------------------------------------------')
+# ax[3].plot([], [], ' ', label = '$f = {}, k = {}, M = {}, p_r = {}$'.format(f, k, M, p_r))
+# ax[3].plot([], [], ' ', label = 'tau_3 = {}, tau_2 = {}, $\lambda = {}$, rho = {}'.format(tau_v_3, tau_v_2, lam, rho))
+# ax[3].plot([], [], ' ', label = 'n_r = {}, $\Delta t$ = {}'.format(n_r, delta_t))
+# ax[3].plot([], [], ' ', label = '-----------------------------------------------')
+# ax[3].plot([], [], ' ', label = 'n_r is number of neurotransmitters released')
+# ax[3].plot([], [], ' ', label = 'rho is voltage coefficient for $n_{c,23}$')
+# ax[3].set_xticks([])
+# ax[3].set_yticks([])
+# 
+# 
+# ax[3].legend()
+# 
+# ax[0].legend(fontsize = fontsize - 5)
+# 
+# ax[1].legend(fontsize = fontsize - 5)
+# 
+# ax[2].legend(fontsize = fontsize)
+# 
+# plt.show()
+# =============================================================================
+
+
+
+# =============================================================================
+# fig, ax = plt.subplots(2,2)
+# ax[0,2].plot([], [], ' ', label = 'Mean num bursts n3 = {}'.format(np.around(np.mean(n_bursts_list_3), 3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean num bursts n2 = {}'.format(np.around(np.mean(n_bursts_list_2), 3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n3 = {}'.format(np.around(mean_inter_AP_time_3,3)))
+# ax[0,2].plot([], [], ' ', label = 'Mean inter-AP time n2 = {}'.format(np.around(mean_inter_AP_time_2,3)))
+# ax[0,2].plot([], [], ' ', label = '---------------------------------------')
+# ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+# =============================================================================
+# =============================================================================
+# ax[0,2].plot([], [], ' ', label = 'f = {}, k = {}, M = {}, \np_r = {}, vth = {}, n_r = {}'.format(\
+#                                 AP_freq, k, M, p_r, vth, n_r))
+# ax[0,2].plot([], [], ' ', label = 'mu = {}, tau_v = {}, lam = {}'.format(mu, tau_v, lam))
+# ax[0,2].plot([], [], ' ', label = '---------------------------------------')
+# ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+# 
+# ax[0,2].plot([], [], ' ', label = 'v\'(t) = mu*n_c(t) - v(t)/tau\nn\'_c = -lam*n_c(t)')
+# ax[0,2].legend(loc = 'upper right', framealpha = 0.5, edgecolor = 'k', fontsize = 7)
+# 
+# plt.show()
+# =============================================================================
+
+###############################################################################
+#
+#                               Sources
+#
+###############################################################################
+
+# [n_r] The number of neurotransmitters per vesicle is 1e4, from:
+# https://www.ncbi.nlm.nih.gov/books/NBK10866/
+
+# [M]
+#https://www.cell.com/current-biology/pdf/S0960-9822(04)00223-4.pdf
