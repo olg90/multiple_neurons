@@ -1,0 +1,47 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def mean_T(c_d, M_d, p_d, v_th, k, c_u, f, M, p_r, tau_v, n_type):
+    H = 1
+    c = 1
+    # k hill function of f
+    k = k/(1+(c*f)**H)
+# =============================================================================
+#     M = M/f
+# =============================================================================
+    v_max = k*c_u*f*M*p_r*tau_v/(f*p_r + k)
+    # Autapse
+    if n_type == 1:
+        mean_T_value = tau_v*np.log((1 + (c_d*M_d*p_d/v_max))/(1 - (v_th/v_max))) 
+    # Open loop
+    if n_type == 0:
+        mean_T_value = tau_v*np.log((1)/(1 - (v_th/v_max))) 
+    return mean_T_value
+
+# =============================================================================
+# def CV2T()
+# =============================================================================
+
+f_range = np.linspace(1, 100, 1000)
+
+c_d = 0.02
+M_d = 20
+p_d = 0.4
+p_r = 1
+v_th = 0.07
+k = 100
+c_u = 0.02
+M = 20
+tau_v = 1
+
+n_type = 1 # 0 - open loop, 1 - autapse
+
+# =============================================================================
+# CVT2_results = 
+# =============================================================================
+
+T_results = [mean_T(c_d, M_d, p_d, v_th, k, c_u, f, M, p_r, tau_v, n_type) for f in f_range]
+
+plt.title('mean_T as a function of f, where k is a function of f')
+plt.plot(f_range, T_results)
+plt.show()
